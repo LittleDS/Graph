@@ -25,6 +25,7 @@ public class KReach {
 	HashMap<Integer, List<Integer>> parents = new HashMap<Integer, List<Integer>>();
 	int totalEdges = 0;
 	
+	//This is a copy of the children structure, since we need to modify the children structure while building the vertex cover
 	HashMap<Integer, List<Integer>> childrenCopy = new HashMap<Integer, List<Integer>>();
 	
 	public static void main(String[] args) throws FileNotFoundException {
@@ -83,10 +84,16 @@ public class KReach {
 			}			
 		}
 		tScanner.close();		
-		
+
+		//We have to explicitly copy the children structure like this
 		for (Integer i : children.keySet()) {
+			//In order to make sure we don't use the same object, we unbox it first
 			int i1 = i;
+			
+			//Initialize the copy
 			childrenCopy.put(i1, new LinkedList<Integer>());
+			
+			//Insert the values into the copy one by one
 			for (Integer j : children.get(i)) {
 				int j1 = j;
 				childrenCopy.get(i1).add(j1);
@@ -118,6 +125,7 @@ public class KReach {
 		VC.clear();
 		
 		Random randomGenerator = new Random();
+		
 		//Get all the vertices
 		LinkedList<Integer> vertices = new LinkedList<Integer>(children.keySet());
 		
@@ -274,6 +282,7 @@ public class KReach {
 		}
 	}	
 	
+	//The node in the final index structure
 	class IndexNode implements Comparable<IndexNode>{
 		Integer vertex;
 		int distance;
@@ -288,8 +297,13 @@ public class KReach {
 		}
 	}
 	
+	//The final index we build
 	HashMap<Integer, List<IndexNode>> FinalIndex = new HashMap<Integer, List<IndexNode>>();
 	
+	/**
+	 * This method is to build the index based on the vertex cover we have
+	 * @param K
+	 */
 	public void BFS(int K) {
 		//For each vertex in the vertex cover, we build a list to record the vertices that can be reached in K hops
 	
@@ -308,26 +322,81 @@ public class KReach {
 			//The total number of vertices is equal to the size of the attributes map
 			//Because each vertex must have at least one attribute entry
 			boolean[] firstVisit = new boolean[attributes.keySet().size()];
+			//The first time we visit a node, we mark it
 			firstVisit[startNode.vertex] = true;				
 			
+			//The BFS procedure for each vertex in the vertex cover
 			while (q.size() > 0) {
 				QueueNode current = q.poll();
 				int currentDepth = current.depth;
 				
 				FinalIndex.get(i).add(new IndexNode(current.vertex, currentDepth));
 				
+				//If the currentDepth is still less than K, we can go deeper
 				if (currentDepth < K && 
 						childrenCopy.containsKey(current.vertex)) {
 					for (Integer j: childrenCopy.get(current.vertex)) {
 						if (!firstVisit[j])
 							q.add(new QueueNode(j,currentDepth + 1));
+						
+							//This must be the first time, so we mark it						
 							firstVisit[j] = true;
 					}				
 				}
 			}
 		
+			//At last, we sort each list according to the vertex ID
+			//In such a way, we can do a binary search in the future
 			Collections.sort(FinalIndex.get(i));
 		}
+	}
+	
+	
+	/**
+	 * For the index, we can binary search to determin whether target are reachable from the source vertex
+	 * @param source
+	 * @param target
+	 * @return
+	 */
+	public boolean BinarySearch(Integer source, Integer target) {
+		
+	}
+	
+	/**
+	 * This is the query function to determine whether the source vertex can reach the target vertex in K hops
+	 * @param source
+	 * @param target
+	 * @return
+	 */
+	public boolean query(Integer source, Integer target) {
+		boolean sIn = VC.contains(source);
+		boolean tIn = VC.contains(target);
+		
+		//If both of the source and target are in the vertex cover
+		if (sIn && tIn) {
+			
+		} else if (sIn && !tIn) { //Only the source vertex is in the vertex cover
+			
+		} else if (!sIn && tIn) { //Only the target vertex is in the vertex cover
+			
+			
+		}
+	}
+	
+	/**
+	 * Output the index to a file
+	 * @param fileName
+	 */
+	public void outputToFile(String fileName) {
+		
+	}
+	
+	/**
+	 * Load the index from file
+	 * @param fileName
+	 */
+	public void loadIndexFromFile(String fileName) {
+		
 	}
 }
 
