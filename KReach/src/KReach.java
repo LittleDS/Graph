@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Queue;
 import java.util.Random;
 import java.util.Scanner;
 import java.util.Set;
@@ -13,6 +15,7 @@ import java.util.Set;
  * Copyright reserved by Lei Yang @ Case Western Reserve University
  * August 15th, 2012
  */
+
 public class KReach {
 	//Since the attributes of each vertex don't have any contribution to the labeling, we can split them into a separate structure
 	HashMap<Integer, List<String>> attributes = new HashMap<Integer, List<String>>();
@@ -22,10 +25,11 @@ public class KReach {
 	HashMap<Integer, List<Integer>> parents = new HashMap<Integer, List<Integer>>();
 	int totalEdges = 0;
 	
+	HashMap<Integer, List<Integer>> childrenCopy = new HashMap<Integer, List<Integer>>();
 	
 	public static void main(String[] args) throws FileNotFoundException {
 		KReach kr = new KReach();
-		kr.Encode("graphexample.txt");
+		kr.Encode("graphexample.txt", 3);
 	}
 
 	/**
@@ -33,7 +37,7 @@ public class KReach {
 	 * @param fileName
 	 * @throws FileNotFoundException
 	 */
-	public void Encode(String fileName) throws FileNotFoundException {
+	public void Encode(String fileName, int K) throws FileNotFoundException {
 		//The input file
 		File tFile = new File(fileName);
 		
@@ -80,11 +84,28 @@ public class KReach {
 		}
 		tScanner.close();		
 		
+		for (Integer i : children.keySet()) {
+			int i1 = i;
+			childrenCopy.put(i1, new LinkedList<Integer>());
+			for (Integer j : children.get(i)) {
+				int j1 = j;
+				childrenCopy.get(i1).add(j1);
+			}
+		}
+		
 		//Calculat the vertex cover using the simplest method
 		CalculateVertexCoverGreedy();
 		
-		for (Integer i : VC)
-			System.out.println(i);
+		//Using a K-hop breadth first search to build the index
+		BFS(K);
+		
+		for (Integer i : FinalIndex.keySet()) {
+			System.out.print(i + ":");
+			for (IndexNode j : FinalIndex.get(i)) {
+				System.out.print(" " + j.vertex + " " + j.distance);
+			}
+			System.out.println();
+		}
 	}
 
 	//The vertex cover
@@ -242,4 +263,71 @@ public class KReach {
 			}			
 		}
 	}
+
+	//This class is used specifically for the node in the breadth first search queue
+	class QueueNode {
+		Integer vertex;
+		int depth;
+		public QueueNode(Integer v, int d) {
+			vertex = v;
+			depth = d;
+		}
+	}	
+	
+	class IndexNode implements Comparable<IndexNode>{
+		Integer vertex;
+		int distance;
+		public IndexNode(Integer v, int d) {
+			vertex = v;
+			distance = d;
+		}
+		
+		@Override
+		public int compareTo(IndexNode o) {
+			return this.vertex.compareTo(o.vertex);
+		}
+	}
+	
+	HashMap<Integer, List<IndexNode>> FinalIndex = new HashMap<Integer, List<IndexNode>>();
+	
+	public void BFS(int K) {
+		//For each vertex in the vertex cover, we build a list to record the vertices that can be reached in K hops
+	
+		for (Integer i: VC) {
+			//Initialize the index storage
+			FinalIndex.put(i, new LinkedList<IndexNode>());
+			
+			//Initialize the breadth first search queue
+			Queue<QueueNode> q = new LinkedList<QueueNode>();
+		
+			//We start from depth 0
+			QueueNode startNode = new QueueNode(i, 0);
+			
+			q.add(startNode);
+			
+			//The total number of vertices is equal to the size of the attributes map
+			//Because each vertex must have at least one attribute entry
+			boolean[] firstVisit = new boolean[attributes.keySet().size()];
+			firstVisit[startNode.vertex] = true;				
+			
+			while (q.size() > 0) {
+				QueueNode current = q.poll();
+				int currentDepth = current.depth;
+				
+				FinalIndex.get(i).add(new IndexNode(current.vertex, currentDepth));
+				
+				if (currentDepth < K && 
+						childrenCopy.containsKey(current.vertex)) {
+					for (Integer j: childrenCopy.get(current.vertex)) {
+						if (!firstVisit[j])
+							q.add(new QueueNode(j,currentDepth + 1));
+							firstVisit[j] = true;
+					}				
+				}
+			}
+		
+			Collections.sort(FinalIndex.get(i));
+		}
+	}
 }
+
