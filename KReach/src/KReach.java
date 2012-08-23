@@ -1,15 +1,19 @@
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Queue;
 import java.util.Random;
 import java.util.Scanner;
 import java.util.Set;
+
+import javax.naming.BinaryRefAddr;
 
 /**
  * Copyright reserved by Lei Yang @ Case Western Reserve University
@@ -28,9 +32,17 @@ public class KReach {
 	//This is a copy of the children structure, since we need to modify the children structure while building the vertex cover
 	HashMap<Integer, List<Integer>> childrenCopy = new HashMap<Integer, List<Integer>>();
 	
-	public static void main(String[] args) throws FileNotFoundException {
+	//The final index we build
+	HashMap<Integer, List<IndexNode>> FinalIndex = new HashMap<Integer, List<IndexNode>>();
+		
+	//Markers	
+	boolean graphLoaded = false;
+	boolean indexLoaded = false;
+	
+	public static void main(String[] args) throws Exception {
 		KReach kr = new KReach();
 		kr.Encode("graphexample.txt", 3);
+		System.out.println(kr.query(1,5));
 	}
 
 	/**
@@ -106,13 +118,8 @@ public class KReach {
 		//Using a K-hop breadth first search to build the index
 		BFS(K);
 		
-		for (Integer i : FinalIndex.keySet()) {
-			System.out.print(i + ":");
-			for (IndexNode j : FinalIndex.get(i)) {
-				System.out.print(" " + j.vertex + " " + j.distance);
-			}
-			System.out.println();
-		}
+		graphLoaded = true;
+		indexLoaded = true;
 	}
 
 	//The vertex cover
@@ -297,9 +304,7 @@ public class KReach {
 		}
 	}
 	
-	//The final index we build
-	HashMap<Integer, List<IndexNode>> FinalIndex = new HashMap<Integer, List<IndexNode>>();
-	
+
 	/**
 	 * This method is to build the index based on the vertex cover we have
 	 * @param K
@@ -359,7 +364,22 @@ public class KReach {
 	 * @return
 	 */
 	public boolean BinarySearch(Integer source, Integer target) {
-		
+		List<IndexNode> tList = FinalIndex.get(source);
+		int start = 0;
+		int end = tList.size() - 1;
+		while (start < end) {
+			int mid = (start + end) / 2;
+			Integer midVertex = tList.get(mid).vertex;
+			if (target.equals(midVertex))
+				return true;
+			if (target.compareTo(midVertex) < 0) {
+				end = mid - 1;
+			}
+			else if (target.compareTo(midVertex) > 0) {
+				start = mid + 1;
+			}
+		}
+		return false;
 	}
 	
 	/**
@@ -367,36 +387,95 @@ public class KReach {
 	 * @param source
 	 * @param target
 	 * @return
+	 * @throws Exception 
 	 */
-	public boolean query(Integer source, Integer target) {
+	public boolean query(Integer source, Integer target) throws Exception {
+		if (!graphLoaded)
+			throw new Exception("Please load the graph first");
+		
 		boolean sIn = VC.contains(source);
 		boolean tIn = VC.contains(target);
 		
 		//If both of the source and target are in the vertex cover
 		if (sIn && tIn) {
-			
+			return BinarySearch(source,target);
 		} else if (sIn && !tIn) { //Only the source vertex is in the vertex cover
-			
+			for (Integer i : parents.get(target)) {
+				if (BinarySearch(source, i))
+					return true;
+			}
+			return false;
 		} else if (!sIn && tIn) { //Only the target vertex is in the vertex cover
-			
-			
+			for (Integer i : childrenCopy.get(source)) {
+				if (BinarySearch(i, target))
+					return true;
+			}
+			return false;
+		} else {
+			for (Integer i: childrenCopy.get(source)) {
+				for (Integer j : parents.get(target)) {
+					if (BinarySearch(i, j))
+						return true;
+				}
+			}
+			return false;
 		}
 	}
 	
 	/**
 	 * Output the index to a file
 	 * @param fileName
+	 * @throws IOException 
 	 */
-	public void outputToFile(String fileName) {
+	public void outputToFile(String fileName) throws IOException {
+		//Open the file
+		FileWriter fstream = new FileWriter(fileName);
+		BufferedWriter out = new BufferedWriter(fstream);
 		
+		//Write the index line by line
+		for (Integer i : FinalIndex.keySet()) {
+			String in = String.valueOf(i);
+			for (IndexNode n : FinalIndex.get(i)) {
+				//Using comma to seprate each item
+				in += "," + n.vertex + "," + n.distance;
+			}
+			out.write(in + "\r\n");
+		}
+		out.close();			
 	}
 	
 	/**
 	 * Load the index from file
 	 * @param fileName
+	 * @throws FileNotFoundException 
 	 */
-	public void loadIndexFromFile(String fileName) {
+	public void loadIndexFromFile(String fileName) throws FileNotFoundException {
+		File inFile = new File(fileName);
+		Scanner inScanner = new Scanner(inFile);
+		//Clear the final index
+		FinalIndex.clear();
+	
+		//Read the file
+		while (inScanner.hasNext()) {
+			String currentLine = inScanner.nextLine();
+			
+			//Split the tokens
+			String[] strings = currentLine.split(",");
+			
+			//The first integer is the ID
+			int ID = Integer.parseInt(strings[0]);
+			
+			//Initialize corresponding list
+			FinalIndex.put(ID, new LinkedList<IndexNode>());
+			
+			//Insert all the items into the list
+			for (int i = 1; i < strings.length; i+= 2) {
+				IndexNode temp = new IndexNode(Integer.parseInt(strings[i]), Integer.parseInt(strings[i + 1]));
+				FinalIndex.get(ID).add(temp);
+			}
+		}
 		
+		inScanner.close();
 	}
 }
 
