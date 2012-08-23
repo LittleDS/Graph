@@ -13,8 +13,6 @@ import java.util.Random;
 import java.util.Scanner;
 import java.util.Set;
 
-import javax.naming.BinaryRefAddr;
-
 /**
  * Copyright reserved by Lei Yang @ Case Western Reserve University
  * August 15th, 2012
@@ -51,51 +49,8 @@ public class KReach {
 	 * @throws FileNotFoundException
 	 */
 	public void Encode(String fileName, int K) throws FileNotFoundException {
-		//The input file
-		File tFile = new File(fileName);
-		
-		Scanner tScanner = new Scanner(tFile);
-		
-		//Read the original graph file and build the graph in the main memory
-		while (tScanner.hasNext()) {
-			//Read the graph file
-			//Get the ID and attributes line
-			String idLine = tScanner.nextLine();
-
-			//Get the neighbors line
-			String neighborLine = tScanner.nextLine();
-			
-			//Build the graph in the main memory
-			//Process the ID and the attributes
-			String[] strings = idLine.split(",");
-			int ID = Integer.parseInt(strings[0]);
-			attributes.put(ID, new LinkedList<String>());
-
-			//The first element is the vertex ID, we start from the second one
-			for (int i = 1; i < strings.length; i++) {
-				attributes.get(ID).add(strings[i]);
-			}
-			
-			//Process the neighbors
-			strings = neighborLine.split(",");
-			if (!children.containsKey(ID))
-				children.put(ID, new LinkedList<Integer>());
-			for (int i = 0; i < strings.length; i++) {
-				int tN = Integer.parseInt(strings[i]);
-				//If the neighbor ID is equal to -1, it means the current vertex doesn't have a neighbor
-				if (tN != -1) {
-					children.get(ID).add(tN);
-					//Calculate the total number of edges
-					totalEdges++;
-					
-					//The parents of each node is also record
-					if (!parents.containsKey(tN))
-						parents.put(tN, new LinkedList<Integer>());
-					parents.get(tN).add(ID);						
-				}				
-			}			
-		}
-		tScanner.close();		
+		//First load the graph
+		loadGraphFromFile(fileName);
 
 		//We have to explicitly copy the children structure like this
 		for (Integer i : children.keySet()) {
@@ -364,7 +319,9 @@ public class KReach {
 	 * @return
 	 */
 	public boolean BinarySearch(Integer source, Integer target) {
+		//The list of all the vertices that can be reached from source
 		List<IndexNode> tList = FinalIndex.get(source);
+		//Start binary search
 		int start = 0;
 		int end = tList.size() - 1;
 		while (start < end) {
@@ -373,7 +330,7 @@ public class KReach {
 			if (target.equals(midVertex))
 				return true;
 			if (target.compareTo(midVertex) < 0) {
-				end = mid - 1;
+				end = mid - 1;  //Be careful
 			}
 			else if (target.compareTo(midVertex) > 0) {
 				start = mid + 1;
@@ -411,7 +368,7 @@ public class KReach {
 					return true;
 			}
 			return false;
-		} else {
+		} else {  //The most expensive case
 			for (Integer i: childrenCopy.get(source)) {
 				for (Integer j : parents.get(target)) {
 					if (BinarySearch(i, j))
@@ -476,6 +433,58 @@ public class KReach {
 		}
 		
 		inScanner.close();
+	}
+	
+	/**
+	 * Load the graph from a file in the disk
+	 * @param fileName
+	 * @throws FileNotFoundException
+	 */
+	public void loadGraphFromFile(String fileName) throws FileNotFoundException {
+		File tFile = new File(fileName);
+		
+		Scanner tScanner = new Scanner(tFile);
+		
+		//Read the original graph file and build the graph in the main memory
+		while (tScanner.hasNext()) {
+			//Read the graph file
+			//Get the ID and attributes line
+			String idLine = tScanner.nextLine();
+
+			//Get the neighbors line
+			String neighborLine = tScanner.nextLine();
+			
+			//Build the graph in the main memory
+			//Process the ID and the attributes
+			String[] strings = idLine.split(",");
+			int ID = Integer.parseInt(strings[0]);
+			attributes.put(ID, new LinkedList<String>());
+
+			//The first element is the vertex ID, we start from the second one
+			for (int i = 1; i < strings.length; i++) {
+				attributes.get(ID).add(strings[i]);
+			}
+			
+			//Process the neighbors
+			strings = neighborLine.split(",");
+			if (!children.containsKey(ID))
+				children.put(ID, new LinkedList<Integer>());
+			for (int i = 0; i < strings.length; i++) {
+				int tN = Integer.parseInt(strings[i]);
+				//If the neighbor ID is equal to -1, it means the current vertex doesn't have a neighbor
+				if (tN != -1) {
+					children.get(ID).add(tN);
+					//Calculate the total number of edges
+					totalEdges++;
+					
+					//The parents of each node is also record
+					if (!parents.containsKey(tN))
+						parents.put(tN, new LinkedList<Integer>());
+					parents.get(tN).add(ID);						
+				}				
+			}			
+		}
+		tScanner.close();			
 	}
 }
 
