@@ -3,7 +3,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -20,10 +19,12 @@ public class Joints {
 	
 	/**
 	 * @param args
+	 * @throws IOException 
 	 */
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
 		// TODO Auto-generated method stub
-
+		Joints test = new Joints();
+		test.Encode("graphexample");
 	}
 	
 	
@@ -80,7 +81,8 @@ public class Joints {
 	}
 	
 	public void Encode(String fileName) throws IOException {
-		IndexVertices(fileName + "Vertices");
+		loadGraphFromFile(fileName);
+		//IndexVertices(fileName + "Vertices");
 		IndexEdges(fileName + "Edges");
 		IndexJoints(fileName + "Joints");
 		
@@ -228,12 +230,121 @@ public class Joints {
 		
 	}
 	
+	HashMap<String, HashMap<String, HashMap<String, Integer>>> jointsCount = new HashMap<String, HashMap<String, HashMap<String, Integer>>>();
+	HashMap<String, HashMap<String, HashMap<String, List<Integer>>>> jointsIndex = new HashMap<String, HashMap<String, HashMap<String, List<Integer>>>>();
 	
 	/**
 	 * 
 	 * @param fileName
+	 * @throws IOException 
 	 */
-	public void IndexJoints(String fileName) {
+	public void IndexJoints(String fileName) throws IOException {
+		for (Integer i : children.keySet()) {
+			List<Integer> childrenList = children.get(i);
+			
+			List<String> aList = attributes.get(i);
+			for (String a : aList)
+				if (!jointsCount.containsKey(a))
+					jointsCount.put(a, new HashMap<String, HashMap<String, Integer>>());
+			
+			for (Integer j : childrenList) {
+				List<Integer> grandchildren = children.get(j);
+				
+				List<String> bList = attributes.get(j);
+				
+				for (String a : aList)
+					for (String b : bList)
+						if (!jointsCount.get(a).containsKey(b))
+							jointsCount.get(a).put(b, new HashMap<String, Integer>());
+				
+				for (Integer k : grandchildren) {
+					List<String> cList = attributes.get(k);
+					
+					for (String a : aList)
+						for (String b : bList)
+							for (String c : cList) {
+								if (!jointsCount.get(a).get(b).containsKey(c))
+									jointsCount.get(a).get(b).put(c, 1);
+								else {
+									Integer v = jointsCount.get(a).get(b).get(c);
+									v = v + 1;
+									jointsCount.get(a).get(b).remove(c);
+									jointsCount.get(a).get(b).put(c, v);
+								}
+								
+							}
+				}
+			}
+		}
 		
+		int threshold = 0;
+		for (Integer i : children.keySet()) {
+			List<Integer> childrenList = children.get(i);
+			
+			List<String> aList = attributes.get(i);
+			
+			for (Integer j : childrenList) {
+				List<Integer> grandchildren = children.get(j);
+				
+				List<String> bList = attributes.get(j);
+				
+				for (Integer k : grandchildren) {
+					List<String> cList = attributes.get(k);
+					
+					for (String a : aList)
+						for (String b : bList)
+							for (String c : cList) {
+								if (jointsCount.get(a).get(b).get(c) > threshold) {
+									if (!jointsIndex.containsKey(a))
+										jointsIndex.put(a, new HashMap<String, HashMap<String, List<Integer>>>());
+									if (!jointsIndex.get(a).containsKey(b))
+										jointsIndex.get(a).put(b, new HashMap<String, List<Integer>>());
+									if (!jointsIndex.get(a).get(b).containsKey(c))
+										jointsIndex.get(a).get(b).put(c, new LinkedList<Integer>());
+									
+									jointsIndex.get(a).get(b).get(c).add(i);
+									jointsIndex.get(a).get(b).get(c).add(j);							
+									jointsIndex.get(a).get(b).get(c).add(k);
+								}
+								
+							}
+				}
+			}
+		}
+		
+		//Open the file
+		FileWriter fstream = new FileWriter(fileName);
+		BufferedWriter out = new BufferedWriter(fstream);
+		
+		//Write the index into file
+		for (String s : jointsIndex.keySet()) {
+			
+			HashMap<String, HashMap<String, List<Integer>>> temp = jointsIndex.get(s); 
+			
+			for (String s1 : temp.keySet()) {
+
+				HashMap<String, List<Integer>> temp1 = temp.get(s1);
+				
+				for (String s2: temp1.keySet()) {
+
+					List<Integer> temp2 = temp1.get(s2);
+					
+					String in = s + "," + s1 + "," + s2;
+
+					//All the vertices that contains the two attributes
+					for (Integer i : temp2) {
+						in += "," + i;
+					}
+					
+					//Write into the file
+					out.write(in + "\r\n");					
+				}
+				
+				
+			}
+		}
+		
+		//dont' forget to close the stream
+		out.close();			
 	}
 }
