@@ -13,19 +13,15 @@ import java.util.Random;
 import java.util.Scanner;
 import java.util.Set;
 
+import src.Graph;
+
 /**
  * Copyright reserved by Lei Yang @ Case Western Reserve University
  * August 15th, 2012
  */
 
 public class KReach {
-	//Since the attributes of each vertex don't have any contribution to the labeling, we can split them into a separate structure
-	HashMap<Integer, List<String>> attributes = new HashMap<Integer, List<String>>();
-
-	//The adjacency list of each vertex
-	HashMap<Integer, List<Integer>> children = new HashMap<Integer, List<Integer>>();
-	HashMap<Integer, List<Integer>> parents = new HashMap<Integer, List<Integer>>();
-	int totalEdges = 0;
+	Graph graph = new Graph();
 	
 	//This is a copy of the children structure, since we need to modify the children structure while building the vertex cover
 	HashMap<Integer, List<Integer>> childrenCopy = new HashMap<Integer, List<Integer>>();
@@ -34,14 +30,8 @@ public class KReach {
 	HashMap<Integer, List<IndexNode>> FinalIndex = new HashMap<Integer, List<IndexNode>>();
 		
 	//Markers	
-	boolean graphLoaded = false;
 	boolean indexLoaded = false;
 	
-	public static void main(String[] args) throws Exception {
-		KReach kr = new KReach();
-		kr.Encode("graphexample.txt", 3);
-		System.out.println(kr.query(1,5));
-	}
 
 	/**
 	 * 
@@ -50,10 +40,10 @@ public class KReach {
 	 */
 	public void Encode(String fileName, int K) throws FileNotFoundException {
 		//First load the graph
-		loadGraphFromFile(fileName);
+		graph.loadGraphFromFile(fileName);
 
 		//We have to explicitly copy the children structure like this
-		for (Integer i : children.keySet()) {
+		for (Integer i : graph.children.keySet()) {
 			//In order to make sure we don't use the same object, we unbox it first
 			int i1 = i;
 			
@@ -61,7 +51,7 @@ public class KReach {
 			childrenCopy.put(i1, new LinkedList<Integer>());
 			
 			//Insert the values into the copy one by one
-			for (Integer j : children.get(i)) {
+			for (Integer j : graph.children.get(i)) {
 				int j1 = j;
 				childrenCopy.get(i1).add(j1);
 			}
@@ -73,7 +63,6 @@ public class KReach {
 		//Using a K-hop breadth first search to build the index
 		BFS(K);
 		
-		graphLoaded = true;
 		indexLoaded = true;
 	}
 
@@ -84,12 +73,15 @@ public class KReach {
 	 * Obtain the vertex cover using the simplest method
 	 */
 	public void CalculateVertexCoverSimple() {
+		
+		int totalEdges = graph.totalEdges;
+		
 		VC.clear();
 		
 		Random randomGenerator = new Random();
 		
 		//Get all the vertices
-		LinkedList<Integer> vertices = new LinkedList<Integer>(children.keySet());
+		LinkedList<Integer> vertices = new LinkedList<Integer>(graph.children.keySet());
 		
 		//Mark if one vertex is used
 		boolean[] used = new boolean[vertices.size()];
@@ -106,7 +98,7 @@ public class KReach {
 			used[i] = true;
 			
 			//Get the children of the first vertex
-			List<Integer> edges = children.get(i);
+			List<Integer> edges = graph.children.get(i);
 			
 			//In case the vertex doesn't have any child, we skip it
 			if (edges.size() == 0) continue;
@@ -121,29 +113,29 @@ public class KReach {
 			
 			//Remove the corresponding edges
 			//First remove the children of these two vertices
-			totalEdges -= children.get(i).size();
-			children.remove(i);
+			totalEdges -= graph.children.get(i).size();
+			graph.children.remove(i);
 			
-			totalEdges -= children.get(j).size();			
-			children.remove(j);
+			totalEdges -= graph.children.get(j).size();			
+			graph.children.remove(j);
 			
 			//For every parent of the vertex, we remove the vertex from their list one by one
-			if (parents.containsKey(i)) {				
-				for (Integer k : parents.get(i)) {
-					if (children.containsKey(k)) {
-						children.get(k).remove(i);					
+			if (graph.parents.containsKey(i)) {				
+				for (Integer k : graph.parents.get(i)) {
+					if (graph.children.containsKey(k)) {
+						graph.children.get(k).remove(i);					
 						totalEdges--;
-						if (children.get(k).size() == 0)
+						if (graph.children.get(k).size() == 0)
 							used[k] = true;
 					}
 				}
 			}
-			if (parents.containsKey(j)) {
-				for (Integer k : parents.get(j)) {
-					if (children.containsKey(k)) {
-						children.get(k).remove(j);
+			if (graph.parents.containsKey(j)) {
+				for (Integer k : graph.parents.get(j)) {
+					if (graph.children.containsKey(k)) {
+						graph.children.get(k).remove(j);
 						totalEdges--;
-						if (children.get(k).size() == 0)
+						if (graph.children.get(k).size() == 0)
 							used[k]= true;
 					}
 				}
@@ -156,20 +148,22 @@ public class KReach {
 	}
 	
 	public void CalculateVertexCoverGreedy() {
+		int totalEdges = graph.totalEdges;
+		
 		VC.clear();
 
 		//The purpose of this structure is to reduce the size of the candidate vertices set
 		//Since each time we remove at least one vertex from this set
 		//The performance should be increased by at least a factor of 2
-		HashSet<Integer> candidateVertices = new HashSet<Integer>(children.keySet());
+		HashSet<Integer> candidateVertices = new HashSet<Integer>(graph.children.keySet());
 		
 		//First calculate the degree of each vertex
-		int[] degree = new int[children.keySet().size()];	
-		for (Integer i: children.keySet()) {
-			if (children.containsKey(i))
-				degree[i] += children.get(i).size();
-			if (parents.containsKey(i))			
-				degree[i] += parents.get(i).size();
+		int[] degree = new int[graph.children.keySet().size()];	
+		for (Integer i: graph.children.keySet()) {
+			if (graph.children.containsKey(i))
+				degree[i] += graph.children.get(i).size();
+			if (graph.parents.containsKey(i))			
+				degree[i] += graph.parents.get(i).size();
 		}
 		
 		//Iteratively choose the vertex cover
@@ -195,32 +189,32 @@ public class KReach {
 			candidateVertices.remove(chosenVertex);
 			
 			//Remove all the children edges and also update the degree of those children
-			if (children.containsKey(chosenVertex)) {
+			if (graph.children.containsKey(chosenVertex)) {
 				//Update the total number of edges first
-				totalEdges -= children.get(chosenVertex).size();
+				totalEdges -= graph.children.get(chosenVertex).size();
 				
 				//Update the degree of those children
-				for (Integer j : children.get(chosenVertex)) {
+				for (Integer j : graph.children.get(chosenVertex)) {
 					degree[j]--;
 					if (degree[j] == 0)
 						candidateVertices.remove(j);
 				}
 				
 				//Remove all those children edges
-				children.remove(chosenVertex);				
+				graph.children.remove(chosenVertex);				
 			}
 			
 			//Remove all the parents edges and also update the degree
-			if (parents.containsKey(chosenVertex)) {
+			if (graph.parents.containsKey(chosenVertex)) {
 				
 				//For each parent
-				for (Integer j : parents.get(chosenVertex))
+				for (Integer j : graph.parents.get(chosenVertex))
 				
 					//Check whether this parent has been processed before
-					if (children.containsKey(j) ) {
+					if (graph.children.containsKey(j) ) {
 					
 						//From the children list, remove that chosen vertex
-						children.get(j).remove(chosenVertex);
+						graph.children.get(j).remove(chosenVertex);
 						
 						//Also update the degree of that parent and the total number of edges0
 						degree[j]--; 						
@@ -281,7 +275,7 @@ public class KReach {
 			
 			//The total number of vertices is equal to the size of the attributes map
 			//Because each vertex must have at least one attribute entry
-			boolean[] firstVisit = new boolean[attributes.keySet().size()];
+			boolean[] firstVisit = new boolean[graph.attributes.keySet().size()];
 			//The first time we visit a node, we mark it
 			firstVisit[startNode.vertex] = true;				
 			
@@ -347,8 +341,10 @@ public class KReach {
 	 * @throws Exception 
 	 */
 	public boolean query(Integer source, Integer target) throws Exception {
-		if (!graphLoaded)
-			throw new Exception("Please load the graph first");
+		if (!graph.graphLoaded)
+			throw new Exception("Please load the graph first.");
+		if (!indexLoaded)
+			throw new Exception("Please load the index first.");
 		
 		boolean sIn = VC.contains(source);
 		boolean tIn = VC.contains(target);
@@ -357,7 +353,7 @@ public class KReach {
 		if (sIn && tIn) {
 			return BinarySearch(source,target);
 		} else if (sIn && !tIn) { //Only the source vertex is in the vertex cover
-			for (Integer i : parents.get(target)) {
+			for (Integer i : graph.parents.get(target)) {
 				if (BinarySearch(source, i))
 					return true;
 			}
@@ -370,7 +366,7 @@ public class KReach {
 			return false;
 		} else {  //The most expensive case
 			for (Integer i: childrenCopy.get(source)) {
-				for (Integer j : parents.get(target)) {
+				for (Integer j : graph.parents.get(target)) {
 					if (BinarySearch(i, j))
 						return true;
 				}
@@ -433,58 +429,8 @@ public class KReach {
 		}
 		
 		inScanner.close();
-	}
-	
-	/**
-	 * Load the graph from a file in the disk
-	 * @param fileName
-	 * @throws FileNotFoundException
-	 */
-	public void loadGraphFromFile(String fileName) throws FileNotFoundException {
-		File tFile = new File(fileName);
 		
-		Scanner tScanner = new Scanner(tFile);
-		
-		//Read the original graph file and build the graph in the main memory
-		while (tScanner.hasNext()) {
-			//Read the graph file
-			//Get the ID and attributes line
-			String idLine = tScanner.nextLine();
-
-			//Get the neighbors line
-			String neighborLine = tScanner.nextLine();
-			
-			//Build the graph in the main memory
-			//Process the ID and the attributes
-			String[] strings = idLine.split(",");
-			int ID = Integer.parseInt(strings[0]);
-			attributes.put(ID, new LinkedList<String>());
-
-			//The first element is the vertex ID, we start from the second one
-			for (int i = 1; i < strings.length; i++) {
-				attributes.get(ID).add(strings[i]);
-			}
-			
-			//Process the neighbors
-			strings = neighborLine.split(",");
-			if (!children.containsKey(ID))
-				children.put(ID, new LinkedList<Integer>());
-			for (int i = 0; i < strings.length; i++) {
-				int tN = Integer.parseInt(strings[i]);
-				//If the neighbor ID is equal to -1, it means the current vertex doesn't have a neighbor
-				if (tN != -1) {
-					children.get(ID).add(tN);
-					//Calculate the total number of edges
-					totalEdges++;
-					
-					//The parents of each node is also record
-					if (!parents.containsKey(tN))
-						parents.put(tN, new LinkedList<Integer>());
-					parents.get(tN).add(ID);						
-				}				
-			}			
-		}
-		tScanner.close();			
+		indexLoaded = true;
 	}
 }
 
