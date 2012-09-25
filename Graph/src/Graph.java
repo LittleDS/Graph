@@ -23,8 +23,9 @@ public class Graph {
 	
 	public boolean graphLoaded = false;
 
-	public int[] indegree;
-	public int[] outdegree;
+	public HashMap<Integer, Integer> indegree = new HashMap<Integer, Integer>();
+	public HashMap<Integer, Integer> outdegree = new HashMap<Integer, Integer>();
+	
 	/**
 	 * Load the graph from a file in the disk
 	 * @param fileName
@@ -73,26 +74,23 @@ public class Graph {
 					children.get(ID).add(tN);
 					//Calculate the total number of edges
 					totalEdges++;
-					
+						
 					//The parents of each node is also record
 					if (!parents.containsKey(tN))
 						parents.put(tN, new LinkedList<Integer>());
 					parents.get(tN).add(ID);						
 				}				
-			}			
+			}
 		}
 		
 		tScanner.close();			
 		
-		//Initialize the indegree and outdegree
-		indegree = new int[attributes.size()];
-		outdegree = new int[attributes.size()];
 		
 		for (Integer i : children.keySet()) {
-			outdegree[i] = children.get(i).size();
+			outdegree.put(i, children.get(i).size());
 		}
 		for (Integer i : parents.keySet()) {
-			indegree[i] = children.get(i).size();			
+			indegree.put(i, parents.get(i).size());			
 		}
 		 
 		graphLoaded = true;

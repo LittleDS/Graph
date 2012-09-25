@@ -10,10 +10,21 @@ import java.util.*;
  * August 13th, 2012
  */
 public class GRAIL {
+	public static void main(String[] args) throws IOException {
+		GRAIL t = new GRAIL();
+		t.Encoding("Data.txt", 1);
+		t.outputToFile("index.txt");
+		System.out.println("Done.");
+	}
+	
 	Graph graph = new Graph();
+
 	//The final labeling result
 	HashMap<Integer, List<Integer>> intervalLabel = new HashMap<Integer, List<Integer>>();
-	
+
+	//Initialize the visited array
+	HashSet<Integer> visited = new HashSet<Integer>();
+
 	/**
 	 * Given a graph file, this method build the interval labeling index
 	 * using the post-order traversal 
@@ -21,109 +32,121 @@ public class GRAIL {
 	 * @throws IOException 
 	 */
 	public void Encoding(String fileName, int D) throws IOException {
+	
 		graph.loadGraphFromFile(fileName);
-		
-		//Find all the roots
-		int totalVertices = graph.attributes.keySet().size();
-		int[] inDegree = new int[totalVertices];
-		for (int i = 0; i < totalVertices; i++) {
-			for (Integer j : graph.children.get(i))
-				inDegree[j]++;
-		}
-		
+			
 		//The roots are those vertices with 0 in-degree
 		LinkedList<Integer> roots = new LinkedList<Integer>();
-		for (int i = 0; i < totalVertices; i++)
-			if (inDegree[i] == 0)
-				roots.add(i);
 
-		//Initialize the visited array
-		visited = new boolean[totalVertices];
+		for (Integer i : graph.indegree.keySet()) {
+			if (graph.indegree.get(i) == 0)
+				roots.add(i);
+		}
 		
+		//There is a chance that every vertex has incoming edge, so there is no root
+		if (roots.size() == 0) {
+			Integer[] l = new Integer[graph.attributes.keySet().size()];
+			graph.attributes.keySet().toArray(l);
+			
+			//Add the first element as the root
+			roots.add(l[0]);
+		}
+				
 		//Initialize the final result
-		for (int i = 0; i < totalVertices; i++)
-			intervalLabel.put(i, new LinkedList<Integer>());
+		for (Integer j : graph.attributes.keySet())
+			intervalLabel.put(j, new LinkedList<Integer>());
 				
 		//Use DFS to label the graph
 		for (int i = 0; i < D; i++) {
+			HashMap<Integer, Integer> postOrder = new HashMap<Integer, Integer>();
+			HashMap<Integer, Integer> lowestOrder = new HashMap<Integer, Integer>();
+			
 			//Reset r for each different interval labeling
-			r = 1;
+			int r = 1;
 			
 			//Reset the visited array
-			for (int j = 0; j < totalVertices; j++) visited[j] = false;
-
+			visited.clear();
+			
+			//Randomly shuffle the children first
+			for (Integer c : graph.children.keySet())
+				Collections.shuffle(graph.children.get(c));
+				
 			//randomly shuffle the roots
 			Collections.shuffle(roots);
-			
-			//Initialize the array for current labels
-			tempLabel = new int[totalVertices][2];			
-			for (int j = 0; j < totalVertices; j++) {
-				tempLabel[j][0] = -1;
-				tempLabel[j][1] = -1;
-			}
-			
+				
 			//Since there could be multiple roots in the graph
 			//we need to label them all
 			for (Integer j : roots) {
-				DFSLabel(j);
+				//Initialize the stack for the depth first search
+				Stack<Integer> s = new Stack<Integer>();
+				//Push the root into the stack
+				s.push(j);
 				
-				//Assign the current label to the final result
-				for (int k = 0; k < totalVertices; k++) {
-					intervalLabel.get(k).add(tempLabel[k][0]);
-					intervalLabel.get(k).add(tempLabel[k][1]);
+				while (!s.empty()) {
+					//Check the top element without picking it out
+					Integer current = s.peek();
+					
+					//If this vertex has been visited before
+					//It means we come back to it
+					if (visited.contains(current)) {						
+						//It means that all the children of the current vertex are visited
+						postOrder.put(current, r);
+
+						//Update the rank
+						r++;
+						
+						//Get the lowest rank from the descdents
+						int min = postOrder.get(current);
+						
+						for (Integer ch : graph.children.get(current)) {
+							//There might be cycle in the graph
+							//That's why we need to check whether the lowest rank of a child already exists
+							if (lowestOrder.get(ch) != null && lowestOrder.get(ch) < min)
+									min = lowestOrder.get(ch);							
+						}
+						
+						//Add the lowest rank
+						lowestOrder.put(current, min);
+				
+						//Pop this vertex out from the stack, it's useless now
+						s.pop();
+					}
+					else 
+						{ 
+							//If it's not visited, we mark it
+							visited.add(current);
+								
+							//Sometimes the current vertex indeed has children, but the children are already visited
+							//So we need to set up a contribute marker to indicate whether the current vertex has any useful children
+							boolean contribute = false;
+							
+							if (graph.children.containsKey(current) && graph.children.get(current).size() > 0) {
+								for (Integer ch : graph.children.get(current))
+									if (!visited.contains(ch)) {
+										//If some of its children are pushed into the stack, then it's useful
+										s.push(ch);
+										contribute = true;
+									}
+							}
+
+							//If it doesn't contribute, then we update the order and pop it out
+							if (!contribute) {
+								postOrder.put(current, r);
+								lowestOrder.put(current, r);
+								r++;						
+								s.pop();
+							}
+						}
 				}
-			}			
+			}
+			
+			for (Integer j : graph.attributes.keySet()) {
+				intervalLabel.get(j).add(lowestOrder.get(j));
+				intervalLabel.get(j).add(postOrder.get(j));
+			}
 		}		
 	}
 
-	
-	//The array to indicate whether a vertex has been visited before
-	boolean[] visited;
-	
-	//A temp array used to store one label set
-	int[][] tempLabel;
-	
-	//The initial rank of vertex	
-	int r = 1;
-	/**
-	 * The depth first search traversal method which is responsible for the labeling
-	 * @param N
-	 */
-	public void DFSLabel(int x) {
-		if (visited[x]) return;
-		visited[x] = true;
-		
-		//Visit the children randomly
-		Collections.shuffle(graph.children.get(x));
-		for (Integer i : graph.children.get(x))
-			DFSLabel(i);
-		
-		//Get the minimum rank value from the children of current vertex
-		int rc = Integer.MAX_VALUE;		
-		for (Integer i : graph.children.get(x))
-			if (tempLabel[i][0] != -1) {
-				if (tempLabel[i][0] < rc)
-					rc = tempLabel[i][0];
-			}
-				
-		tempLabel[x][0] = min(rc, r);
-		tempLabel[x][1] = r;
-		
-		//Increase the current rank
-		r = r + 1;
-	}
-
-	/**
-	 * Return the minimum of the two parameters
-	 * @param a
-	 * @param b
-	 */
-	public int min(int a, int b) {
-		if (a <= b)
-			return a;
-		else
-			return b;
-	}
 	
 	/**
 	 * Output the index to a file for future use

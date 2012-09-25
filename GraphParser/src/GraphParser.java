@@ -12,7 +12,13 @@ import java.util.Scanner;
 
 
 public class GraphParser {
-
+	public static void main(String[] args) throws IOException {
+		GraphParser g = new GraphParser();
+		g.Parser("Amazon0302.txt");
+		g.output("Data.txt");
+		System.out.println("Done.");
+	}
+	
 	String[] attributePool;
 
 	HashSet<Integer> vertices = new HashSet<Integer>();
@@ -26,7 +32,7 @@ public class GraphParser {
 		Scanner sc = new Scanner(inputFile);
 		while (sc.hasNext()) {
 			String current = sc.nextLine();
-			String[] strings = current.split(" ");
+			String[] strings = current.split("\t");
 			Integer source = Integer.parseInt(strings[0]);
 			Integer target = Integer.parseInt(strings[1]);
 			
@@ -43,14 +49,14 @@ public class GraphParser {
 		//Randomly give the vertices some attributes
 		attributePool = new String[52];		
 		for (int i = 0; i < 26; i++) {
-			attributePool[i] = String.valueOf(i + 65);
-			attributePool[i + 26] = String.valueOf(i + 97);
+			attributePool[i] = (char)(i + 65) + "";
+			attributePool[i + 26] = (char)(i + 97) + "";
 		}
 		
 		Random r = new Random();
 		for (Integer i : vertices) {
 			attributeList.put(i, new LinkedList<String>());
-			attributeList.get(i).add(String.valueOf(r.nextInt(52)));
+			attributeList.get(i).add(attributePool[r.nextInt(52)]);
 		}
 	}
 	
@@ -78,6 +84,12 @@ public class GraphParser {
 				//Remove the last comma
 				temp = temp.substring(0, temp.length() - 1);
 			}
+			else
+				temp = "-1";
+
+			//No matter the current vertex has neighbors or not
+			//We write a line into the file
+			out.write(temp + "\r\n");							
 		}
 		out.close();	
 	}
