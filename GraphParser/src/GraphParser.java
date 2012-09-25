@@ -15,13 +15,6 @@ public class GraphParser {
 
 	String[] attributePool;
 
-	/**
-	 * @param args
-	 */
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-
-	}
 	HashSet<Integer> vertices = new HashSet<Integer>();
 	
 	HashMap<Integer, List<Integer>> adjacencyList = new HashMap<Integer, List<Integer>>();
@@ -61,6 +54,11 @@ public class GraphParser {
 		}
 	}
 	
+	/**
+	 * Output the parsed data graph
+	 * @param fileName
+	 * @throws IOException
+	 */
 	public void output(String fileName) throws IOException {		
 		FileWriter fstream = new FileWriter(fileName);
 		BufferedWriter out = new BufferedWriter(fstream);
@@ -75,8 +73,10 @@ public class GraphParser {
 			temp = "";
 			if (adjacencyList.containsKey(i)) {
 				for (Integer j : adjacencyList.get(i)) {
-					
-				}					
+					temp += j + ",";
+				}
+				//Remove the last comma
+				temp = temp.substring(0, temp.length() - 1);
 			}
 		}
 		out.close();	

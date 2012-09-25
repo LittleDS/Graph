@@ -8,7 +8,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Scanner;
 
-import src.Graph;
 
 public class Joints {
 	Graph graph = new Graph();

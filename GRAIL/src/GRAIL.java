@@ -5,7 +5,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 
-import src.Graph;
 /**
  * Copyright reserved by Lei Yang @ Case Western Reserve University
  * August 13th, 2012

@@ -13,8 +13,6 @@ import java.util.Random;
 import java.util.Scanner;
 import java.util.Set;
 
-import src.Graph;
-
 /**
  * Copyright reserved by Lei Yang @ Case Western Reserve University
  * August 15th, 2012

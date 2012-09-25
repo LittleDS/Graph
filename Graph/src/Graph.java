@@ -1,4 +1,3 @@
-package src;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.HashMap;
@@ -23,7 +22,9 @@ public class Graph {
 	public int primaryPosition = 1;
 	
 	public boolean graphLoaded = false;
-	
+
+	public int[] indegree;
+	public int[] outdegree;
 	/**
 	 * Load the graph from a file in the disk
 	 * @param fileName
@@ -83,6 +84,17 @@ public class Graph {
 		
 		tScanner.close();			
 		
+		//Initialize the indegree and outdegree
+		indegree = new int[attributes.size()];
+		outdegree = new int[attributes.size()];
+		
+		for (Integer i : children.keySet()) {
+			outdegree[i] = children.get(i).size();
+		}
+		for (Integer i : parents.keySet()) {
+			indegree[i] = children.get(i).size();			
+		}
+		 
 		graphLoaded = true;
 	}
 }
