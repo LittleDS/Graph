@@ -173,6 +173,7 @@ public class GRAIL {
 	public void loadIndexFromFile(String fileName) throws FileNotFoundException {
 		File tFile = new File(fileName);
 		Scanner tScanner = new Scanner(tFile);
+		
 		//Just in case
 		intervalLabel.clear();
 		
@@ -194,7 +195,8 @@ public class GRAIL {
 				intervalLabel.get(ID).add(Integer.parseInt(strings[i]));
 			}
 			
-		}		
+		}
+		tScanner.close();
 	}
 
 	/**

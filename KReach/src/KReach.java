@@ -82,7 +82,7 @@ public class KReach {
 		LinkedList<Integer> vertices = new LinkedList<Integer>(graph.children.keySet());
 		
 		//Mark if one vertex is used
-		boolean[] used = new boolean[vertices.size()];
+		HashSet<Integer> used = new HashSet<Integer>();
 		
 		//Randomly shuffle the vertices and it's equal to randomly pick up one vertex from the set
 		Collections.shuffle(vertices);
@@ -90,10 +90,10 @@ public class KReach {
 		//The algorithm is straightforward.  We first choose a vertex and from the children of this vertex we choose the other one
 		for (Integer i : vertices) {
 			//If this vertex is used before, we can skip it
-			if (used[i]) continue;
+			if (used.contains(i)) continue;
 			
 			//Mark it as used
-			used[i] = true;
+			used.add(i);
 			
 			//Get the children of the first vertex
 			List<Integer> edges = graph.children.get(i);
@@ -103,7 +103,7 @@ public class KReach {
 			
 			//Randomly choose one of its children
 			Integer j = edges.get(randomGenerator.nextInt(edges.size()));
-			used[j] = true;
+			used.add(j);
 			
 			//Add the two vertices into the set
 			VC.add(i);
@@ -124,7 +124,7 @@ public class KReach {
 						graph.children.get(k).remove(i);					
 						totalEdges--;
 						if (graph.children.get(k).size() == 0)
-							used[k] = true;
+							used.add(k);
 					}
 				}
 			}
@@ -134,7 +134,7 @@ public class KReach {
 						graph.children.get(k).remove(j);
 						totalEdges--;
 						if (graph.children.get(k).size() == 0)
-							used[k]= true;
+							used.add(k);
 					}
 				}
 			}
