@@ -19,13 +19,7 @@ public class Joints {
 		IndexJoints(fileName + "Joints");
 		
 	}
-	
-	
-	//The inverted index for vertices
-	//Here I implement a two levels version
-	HashMap<String, HashMap<String, List<Integer>>> verticesIndex = new HashMap<String, HashMap<String,List<Integer>>>();
-	
-
+		
 	HashMap<String, HashMap<String, List<Integer>>> edgesIndex = new HashMap<String, HashMap<String,List<Integer>>>();
 	
 	/**

@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Random;
 import java.util.Scanner;
@@ -19,6 +20,13 @@ import java.util.Set;
  */
 
 public class KReach {
+	
+	public static void main(String[] args) throws IOException {
+		KReach k = new KReach();
+		k.Encode("p2pData.txt", 3);
+		k.outputToFile("indexsimple.txt");
+		
+	}
 	Graph graph = new Graph();
 	
 	//This is a copy of the children structure, since we need to modify the children structure while building the vertex cover
@@ -39,7 +47,7 @@ public class KReach {
 	public void Encode(String fileName, int K) throws FileNotFoundException {
 		//First load the graph
 		graph.loadGraphFromFile(fileName);
-
+		System.out.println("Finsihed loading graph");
 		//We have to explicitly copy the children structure like this
 		for (Integer i : graph.children.keySet()) {
 			//In order to make sure we don't use the same object, we unbox it first
@@ -54,13 +62,14 @@ public class KReach {
 				childrenCopy.get(i1).add(j1);
 			}
 		}
-		
+		System.out.println("Start calculating VC");
 		//Calculat the vertex cover using the simplest method
 		CalculateVertexCoverGreedy();
-		
+		System.out.println("The size of VC is " + VC.size());
+		System.out.println("Start building KReach");
 		//Using a K-hop breadth first search to build the index
-		BFS(K);
-		
+		//BFS(K);
+		System.out.println("Done.");
 		indexLoaded = true;
 	}
 
@@ -149,31 +158,29 @@ public class KReach {
 		int totalEdges = graph.totalEdges;
 		
 		VC.clear();
-
-		//The purpose of this structure is to reduce the size of the candidate vertices set
-		//Since each time we remove at least one vertex from this set
-		//The performance should be increased by at least a factor of 2
-		HashSet<Integer> candidateVertices = new HashSet<Integer>(graph.children.keySet());
 		
 		//First calculate the degree of each vertex
-		int[] degree = new int[graph.children.keySet().size()];	
-		for (Integer i: graph.children.keySet()) {
+		HashMap<Integer, Integer> degree = new HashMap<Integer, Integer>();
+
+		for (Integer i: graph.attributes.keySet()) {
+			int t = 0;
 			if (graph.children.containsKey(i))
-				degree[i] += graph.children.get(i).size();
+				t += graph.children.get(i).size();
 			if (graph.parents.containsKey(i))			
-				degree[i] += graph.parents.get(i).size();
+				t += graph.parents.get(i).size();
+			degree.put(i, t);
 		}
 		
 		//Iteratively choose the vertex cover
 		while (totalEdges > 0) {
-		
+
 			//Choose the one with maximum degree
 			int maximumDegree = 0;
-			Integer chosenVertex = null;
-			for (Integer i : candidateVertices) {
-				if (degree[i] > maximumDegree) {
-					maximumDegree = degree[i];
-					chosenVertex = i; 
+			Integer chosenVertex = 0;
+			for (Map.Entry<Integer, Integer> entry : degree.entrySet()) {
+				if (entry.getValue() > maximumDegree) {
+					maximumDegree = entry.getValue();
+					chosenVertex = entry.getKey();
 				}
 			}
 			
@@ -181,10 +188,8 @@ public class KReach {
 			VC.add(chosenVertex);
 			
 			//Modify the degree of that vertex to 0, because we will remove all the edges attaching to it
-			degree[chosenVertex] = 0;			
+			degree.remove(chosenVertex);			
 			
-			//Also remove that vertex from the candidate sets
-			candidateVertices.remove(chosenVertex);
 			
 			//Remove all the children edges and also update the degree of those children
 			if (graph.children.containsKey(chosenVertex)) {
@@ -193,9 +198,10 @@ public class KReach {
 				
 				//Update the degree of those children
 				for (Integer j : graph.children.get(chosenVertex)) {
-					degree[j]--;
-					if (degree[j] == 0)
-						candidateVertices.remove(j);
+					int tempValue = degree.get(j);					
+					degree.remove(j);
+					if (tempValue > 1)
+						degree.put(j, tempValue - 1);
 				}
 				
 				//Remove all those children edges
@@ -214,13 +220,14 @@ public class KReach {
 						//From the children list, remove that chosen vertex
 						graph.children.get(j).remove(chosenVertex);
 						
-						//Also update the degree of that parent and the total number of edges0
-						degree[j]--; 						
-						totalEdges--;
+						//Also update the degree of that parent and the total number of edges
+						int tempValue = degree.get(j);
+						degree.remove(j);
+						if (tempValue > 1) {
+							degree.put(j, tempValue - 1);
+						}
 						
-						//If the total degree of that parent becomes 0, then we can remove it from the candidate set
-						if (degree[j] == 0)
-							candidateVertices.remove(j);							
+						totalEdges--;						
 					}
 			}			
 		}
