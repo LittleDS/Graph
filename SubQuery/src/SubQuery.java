@@ -65,16 +65,64 @@ public class SubQuery {
 		return result;		
 	}
 	
-	public void Query(List<String> components) {
-		for (String s : components) {
-			String[] ids = s.split(" ");
-			//It's a joint
-			if (ids.length == 3) {
+	public void Query(List<String> components, Graph subGraph) {
+		List<String> componentsInOrder = new LinkedList<String>();		
+		
+		//First insert an initial component
+		componentsInOrder.add(components.get(0));
+		components.remove(0);
+		
+		while (components.size() > 0) {
+			boolean match = false;
+			
+			for (int i = 0; i < componentsInOrder.size(); i++) {
+				String[] ids1 = componentsInOrder.get(i).split(",");
 				
-			} else { //It's an edge
+				for (int j = 0; j < components.size(); j++) {
+					String[] ids2 = components.get(j).split(",");
+				
+					for (int k = 0; k < ids1.length; j++)
+						for (int l = 0; k < ids2.length; k++) {
+							if (ids1[k].equals(ids2[l])) {
+								match = true;								
+								break;
+							}
+						}
+					
+					if (match) {			
+						componentsInOrder.add(components.get(j));
+						components.remove(j);
+						break;
+					}
+				}
+				
+				if (match) {
+					break;
+				}
+				
+			}
+		}
+		
+		for (String s : componentsInOrder) {
+			String[] ids = s.split(",");			
+
+			if (ids.length == 3) {//Joint
+				
+				String a1 = subGraph.primaryAttribute.get(Integer.parseInt(ids[0]));
+				String a2 = subGraph.primaryAttribute.get(Integer.parseInt(ids[1]));
+				String a3 = subGraph.primaryAttribute.get(Integer.parseInt(ids[2]));
+				
+				//All the triples that match the attributes
+				List<Integer> triples = index.jointsIndex.get(a1).get(a2).get(a3);
+				
+			} else {//Edge
+
+				String a1 = subGraph.primaryAttribute.get(Integer.parseInt(ids[0]));
+				String a2 = subGraph.primaryAttribute.get(Integer.parseInt(ids[1]));
+				
+				List<Integer> pairs = index.edgesIndex.get(a1).get(a2);
 				
 			}
 		}
 	}
-	
 }
