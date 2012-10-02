@@ -123,8 +123,10 @@ public class KReach {
 			totalEdges -= graph.children.get(i).size();
 			graph.children.remove(i);
 			
-			totalEdges -= graph.children.get(j).size();			
-			graph.children.remove(j);
+			if (graph.children.containsKey(j)) {
+				totalEdges -= graph.children.get(j).size();
+				graph.children.remove(j);				
+			}
 			
 			//For every parent of the vertex, we remove the vertex from their list one by one
 			if (graph.parents.containsKey(i)) {				
@@ -198,10 +200,12 @@ public class KReach {
 				
 				//Update the degree of those children
 				for (Integer j : graph.children.get(chosenVertex)) {
-					int tempValue = degree.get(j);					
-					degree.remove(j);
-					if (tempValue > 1)
-						degree.put(j, tempValue - 1);
+					if (degree.containsKey(j)) {
+						int tempValue = degree.get(j);
+						degree.remove(j);
+						if (tempValue > 1)
+							degree.put(j, tempValue - 1);						
+					}
 				}
 				
 				//Remove all those children edges
@@ -220,13 +224,14 @@ public class KReach {
 						//From the children list, remove that chosen vertex
 						graph.children.get(j).remove(chosenVertex);
 						
-						//Also update the degree of that parent and the total number of edges
-						int tempValue = degree.get(j);
-						degree.remove(j);
-						if (tempValue > 1) {
-							degree.put(j, tempValue - 1);
+						if (degree.containsKey(j)) {
+							//Also update the degree of that parent and the total number of edges
+							int tempValue = degree.get(j);
+							degree.remove(j);
+							if (tempValue > 1) {
+								degree.put(j, tempValue - 1);
+							}
 						}
-						
 						totalEdges--;						
 					}
 			}			

@@ -65,7 +65,9 @@ public class SubQuery {
 		return result;		
 	}
 	
-	public void Query(List<String> components, Graph subGraph) {
+	public HashMap<Integer, List<Integer>> Query(List<String> components, Graph subGraph) {
+		HashMap<Integer, List<Integer>> result = new HashMap<Integer, List<Integer>>();
+		
 		List<String> componentsInOrder = new LinkedList<String>();		
 		
 		//First insert an initial component
@@ -106,22 +108,30 @@ public class SubQuery {
 		for (String s : componentsInOrder) {
 			String[] ids = s.split(",");			
 
-			if (ids.length == 3) {//Joint
-				
-				String a1 = subGraph.primaryAttribute.get(Integer.parseInt(ids[0]));
-				String a2 = subGraph.primaryAttribute.get(Integer.parseInt(ids[1]));
-				String a3 = subGraph.primaryAttribute.get(Integer.parseInt(ids[2]));
-				
-				//All the triples that match the attributes
-				List<Integer> triples = index.jointsIndex.get(a1).get(a2).get(a3);
-				
-			} else {//Edge
+			Integer[] idsInteger = new Integer[ids.length];
+			String[] attributeString = new String[ids.length];
 
-				String a1 = subGraph.primaryAttribute.get(Integer.parseInt(ids[0]));
-				String a2 = subGraph.primaryAttribute.get(Integer.parseInt(ids[1]));
+			for (int i = 0; i < ids.length; i++) {
+				idsInteger[i] = Integer.parseInt(ids[i]);
+				attributeString[i] = subGraph.primaryAttribute.get(idsInteger[i]);
+			}
+			LinkedList<LinkedList<Integer>> lists = new LinkedList<LinkedList<Integer>>();
+			if (ids.length == 3) {//Joint				
+				//All the triples that match the attributes
+				List<Integer> triples = index.jointsIndex.get(attributeString[0]).get(attributeString[1]).get(attributeString[2]);
 				
-				List<Integer> pairs = index.edgesIndex.get(a1).get(a2);
 				
+			} else {//Edge			
+				List<Integer> pairs = index.edgesIndex.get(attributeString[0]).get(attributeString[1]);				
+			}
+			
+			for (int i = 0; i < ids.length; i++) {
+				if (result.containsKey(idsInteger[i])) {
+					
+				}
+				else {
+					
+				}
 			}
 		}
 	}
