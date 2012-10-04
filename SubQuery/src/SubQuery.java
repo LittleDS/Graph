@@ -32,48 +32,62 @@ public class SubQuery {
 	public List<String> Divide(Graph g) {
 		List<String> result = new LinkedList<String>();
 		
-		//First find all the joints
-		HashSet<Integer> cand = new HashSet<Integer>();
+		//In the first step, we want to find all the joints
+		//First determine those vertices with both indegree and outdegree
+		HashSet<Integer> cand = new HashSet<Integer>();		
 		for (Integer i : g.indegree.keySet()) {
 			if (g.outdegree.containsKey(i)) {
 				cand.add(i);
 			}
 		}
-
+		
+		
+		//For each of those vertices, choose one child and one parent to build a joint
 		for (Integer i : cand) {			
-			int t = g.parents.get(i).size() < g.children.get(i).size()? g.parents.get(i).size() : g.children.get(i).size();
 			List<Integer> parentsList = g.parents.get(i);
 			List<Integer> childrenList = g.children.get(i);
 			
-			for (int a = 0; a < t; a++) {
-				Integer p = parentsList.get(a);
-				Integer c = childrenList.get(a);
+			Iterator<Integer> pi = parentsList.iterator();
+			Iterator<Integer> ci = childrenList.iterator();
+			while (pi.hasNext() && ci.hasNext()) {
+				Integer p = pi.next();
+				Integer c = ci.next();
 				result.add(p + "," + i + "," + c);
 				g.parents.get(i).remove(p);
-				g.children.get(i).remove(c);
-			}					
+				g.children.get(i).remove(c);				
+			}
 		}
 		
 		//Get all the rest edges
 		
 		for (Integer i : g.children.keySet()) {
 			List<Integer> childrenList = g.children.get(i);
-			for (Integer j : childrenList) {
-				result.add(i + "," + j);
+			if (childrenList.size() > 0) {
+				for (Integer j : childrenList) {
+					result.add(i + "," + j);
+				}
 			}
 		}
 		return result;		
 	}
+
 	
-	public HashMap<Integer, List<Integer>> Query(List<String> components, Graph subGraph) {
-		HashMap<Integer, List<Integer>> result = new HashMap<Integer, List<Integer>>();
-		
+	/**
+	 * Sort the components
+	 * @param components
+	 * @return
+	 */
+	public List<String> SortComponents(List<String> components) {
+	
+		//We need to determine an order of those components first
+		//Because we have to make sure the next component has at least one intersection with the previous components
 		List<String> componentsInOrder = new LinkedList<String>();		
 		
 		//First insert an initial component
 		componentsInOrder.add(components.get(0));
 		components.remove(0);
-		
+
+		//Make sure we don't leave any component
 		while (components.size() > 0) {
 			boolean match = false;
 			
@@ -83,8 +97,8 @@ public class SubQuery {
 				for (int j = 0; j < components.size(); j++) {
 					String[] ids2 = components.get(j).split(",");
 				
-					for (int k = 0; k < ids1.length; j++)
-						for (int l = 0; k < ids2.length; k++) {
+					for (int k = 0; k < ids1.length; k++)
+						for (int l = 0; l < ids2.length; l++) {
 							if (ids1[k].equals(ids2[l])) {
 								match = true;								
 								break;
@@ -104,35 +118,76 @@ public class SubQuery {
 				
 			}
 		}
+		return componentsInOrder;
+	}
+	
+	/**
+	 * Using the index to query the data graph
+	 * @param components Already sorted
+	 * @param subGraph
+	 * @return
+	 */
+	public LinkedList<ArrayList<Integer>> Query(List<String> components, Graph subGraph) {
+		//The result to be returned
+		LinkedList<ArrayList<Integer>> result = new LinkedList<ArrayList<Integer>>();
 		
-		for (String s : componentsInOrder) {
+		ArrayList<Integer> x = new ArrayList<Integer>(subGraph.attributes.size());
+		for (int i = 0; i < x.size(); i++) 
+			x.set(i, -1);
+				
+		for (String s : components) {
 			String[] ids = s.split(",");			
 
 			Integer[] idsInteger = new Integer[ids.length];
 			String[] attributeString = new String[ids.length];
-
+			Integer[] correspondingPosition = new Integer[ids.length];
+			
 			for (int i = 0; i < ids.length; i++) {
 				idsInteger[i] = Integer.parseInt(ids[i]);
 				attributeString[i] = subGraph.primaryAttribute.get(idsInteger[i]);
+
+				//Get the corresponding position in the result list
+				for (int j = 0; j < x.size(); j++) {
+					if (x.get(j).equals(idsInteger[i])) 
+						correspondingPosition[i] = j;
+				}
 			}
-			LinkedList<LinkedList<Integer>> lists = new LinkedList<LinkedList<Integer>>();
+			
+			
+			LinkedList<ArrayList<Integer>> lists = new LinkedList<ArrayList<Integer>>();
+			
 			if (ids.length == 3) {//Joint				
 				//All the triples that match the attributes
 				List<Integer> triples = index.jointsIndex.get(attributeString[0]).get(attributeString[1]).get(attributeString[2]);
 				
+				Iterator<Integer> li = triples.iterator();
+				while (li.hasNext()) {
+					ArrayList<Integer> tArrayList = new ArrayList<Integer>(3);
+					tArrayList.add(0, li.next());
+					tArrayList.add(1, li.next());
+					tArrayList.add(2, li.next());
+					lists.add(tArrayList);
+				}
 				
 			} else {//Edge			
-				List<Integer> pairs = index.edgesIndex.get(attributeString[0]).get(attributeString[1]);				
+				List<Integer> pairs = index.edgesIndex.get(attributeString[0]).get(attributeString[1]);
+				
+				Iterator<Integer> li = pairs.iterator();
+				while (li.hasNext()) {
+					ArrayList<Integer> tArrayList = new ArrayList<Integer>(2);
+					tArrayList.add(0, li.next());
+					tArrayList.add(1, li.next());
+					lists.add(tArrayList);
+				}
 			}
 			
-			for (int i = 0; i < ids.length; i++) {
-				if (result.containsKey(idsInteger[i])) {
-					
-				}
-				else {
-					
-				}
+		
+			Iterator<ArrayList<Integer>> li = lists.iterator();
+			while (li.hasNext()) {
+				ArrayList<Integer> currentList = li.next();
+				
 			}
+
 		}
 	}
-}
+}	
