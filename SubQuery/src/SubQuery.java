@@ -127,30 +127,19 @@ public class SubQuery {
 	 * @param subGraph
 	 * @return
 	 */
-	public LinkedList<ArrayList<Integer>> Query(List<String> components, Graph subGraph) {
+	public LinkedList<MatchedCandidates> Query(List<String> components, Graph subGraph) {
 		//The result to be returned
-		LinkedList<ArrayList<Integer>> result = new LinkedList<ArrayList<Integer>>();
-		
-		ArrayList<Integer> x = new ArrayList<Integer>(subGraph.attributes.size());
-		for (int i = 0; i < x.size(); i++) 
-			x.set(i, -1);
-				
+		LinkedList<MatchedCandidates> result = new LinkedList<MatchedCandidates>();
+					
 		for (String s : components) {
 			String[] ids = s.split(",");			
 
 			Integer[] idsInteger = new Integer[ids.length];
 			String[] attributeString = new String[ids.length];
-			Integer[] correspondingPosition = new Integer[ids.length];
 			
 			for (int i = 0; i < ids.length; i++) {
 				idsInteger[i] = Integer.parseInt(ids[i]);
 				attributeString[i] = subGraph.primaryAttribute.get(idsInteger[i]);
-
-				//Get the corresponding position in the result list
-				for (int j = 0; j < x.size(); j++) {
-					if (x.get(j).equals(idsInteger[i])) 
-						correspondingPosition[i] = j;
-				}
 			}
 			
 			
@@ -181,13 +170,42 @@ public class SubQuery {
 				}
 			}
 			
-		
-			Iterator<ArrayList<Integer>> li = lists.iterator();
-			while (li.hasNext()) {
-				ArrayList<Integer> currentList = li.next();
-				
+			//First time, we insert all the candidates into the result set
+			if (result.size() == 0) {
+				Iterator<ArrayList<Integer>> li = lists.iterator();
+				while (li.hasNext()) {
+					MatchedCandidates mT = new MatchedCandidates(li.next(), idsInteger);
+					result.add(mT);
+				}				
 			}
+			else {
+				//The temp result
+				LinkedList<MatchedCandidates> newResult = new LinkedList<MatchedCandidates>();
 
+				//Iterate over all the graph pieces in the result set
+				for (MatchedCandidates m : result) {
+					Iterator<ArrayList<Integer>> li = lists.iterator();
+
+					//Iterate over all the components 
+					while (li.hasNext()) {
+						ArrayList<Integer> currentList = li.next();
+						if (m.CanJoin(currentList, idsInteger)) {
+							MatchedCandidates mT = new MatchedCandidates(m);
+							mT.Join(currentList,  idsInteger);
+							newResult.add(mT);
+						}
+					}
+					
+				}
+				
+				//Clear the old result set forcibly
+				result.clear();
+				//Update the result set to the new one
+				result = newResult;
+				//Also clear the temp new result set
+				newResult.clear();
+			}
 		}
+		return result;
 	}
 }	
