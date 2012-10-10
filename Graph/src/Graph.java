@@ -85,14 +85,34 @@ public class Graph {
 		
 		tScanner.close();			
 		
-		
+		calculateDegree();
+		 
+		graphLoaded = true;
+	}
+	
+	/**
+	 * Add an edge to the graph
+	 * 
+	 */
+	public void addEdge(Integer s, List<String> aS, Integer t, List<String> aT) {
+		if (!attributes.containsKey(s))
+			attributes.put(s, aS);
+		if (!attributes.containsKey(t))
+			attributes.put(t, aT);
+		if (!children.containsKey(s))
+			children.put(s, new LinkedList<Integer>());
+		children.get(s).add(t);
+	}
+	
+	/**
+	 * Calculate the indegree and outdegree
+	 */
+	public void calculateDegree() {
 		for (Integer i : children.keySet()) {
 			outdegree.put(i, children.get(i).size());
 		}
 		for (Integer i : parents.keySet()) {
 			indegree.put(i, parents.get(i).size());			
-		}
-		 
-		graphLoaded = true;
+		}		
 	}
 }

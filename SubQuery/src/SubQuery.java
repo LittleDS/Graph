@@ -25,6 +25,18 @@ public class SubQuery {
 	}
 	
 	/**
+	 * Execute the query to return all the matchings
+	 * @return
+	 */
+	public HashMap<Graph, LinkedList<MatchedCandidates>> Execute() {
+		HashMap<Graph, LinkedList<MatchedCandidates>> r = new HashMap<Graph, LinkedList<MatchedCandidates>>();
+		for (Graph g : subGraphs) {
+			r.put(g, Query(SortComponents(Divide(g)), g));
+		}
+		return r;
+	}
+	
+	/**
 	 * Divide the graph into joints and edges
 	 * @param g
 	 * @return
@@ -190,6 +202,7 @@ public class SubQuery {
 					while (li.hasNext()) {
 						ArrayList<Integer> currentList = li.next();
 						if (m.CanJoin(currentList, idsInteger)) {
+							//Make a copy of the current graph piece
 							MatchedCandidates mT = new MatchedCandidates(m);
 							mT.Join(currentList,  idsInteger);
 							newResult.add(mT);
@@ -202,8 +215,6 @@ public class SubQuery {
 				result.clear();
 				//Update the result set to the new one
 				result = newResult;
-				//Also clear the temp new result set
-				newResult.clear();
 			}
 		}
 		return result;
