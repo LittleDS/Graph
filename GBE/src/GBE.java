@@ -1,29 +1,37 @@
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Scanner;
 
 /**
- * The headquarter class
+ * The headquarters class
  * @author Administrator
  *
  */
 public class GBE {
 
+	//The input for this class
 	Joints jointsIndex = new Joints();
 	GRAIL grailIndex = new GRAIL();
 	KReach kreachIndex = new KReach();
 	Graph dataGraph = new Graph();
-	
+		
+	//Mark the visited vertices
+	HashSet<Integer> visited = new HashSet<Integer>();
+
+	//Store all the super edges
+	LinkedList<String> superEdges = new LinkedList<String>();
+
 	public void Query(String fileName) throws FileNotFoundException {
 		List<Graph> sG =  DivideGraph(fileName);
 		SubQuery sQ = new SubQuery(dataGraph, sG, jointsIndex);
-		sQ.Execute();
+		HashMap<Graph, LinkedList<MatchedCandidates>> subResult = sQ.Execute();
+		
 	}
 	
-	LinkedList<String> superEdges = new LinkedList<String>();
 	/**
 	 * This method is used to remove the super edge from the pattern
 	 * Store the necessary information for rebuilding the graph
@@ -84,6 +92,8 @@ public class GBE {
 			}
 		}
 		
+		sc.close();
+		
 		//The return result
 		List<Graph> re = new LinkedList<Graph>();
 		
@@ -102,9 +112,7 @@ public class GBE {
 		
 		return re;
 	}
-	
-	//Mark the visited vertices
-	HashSet<Integer> visited = new HashSet<Integer>();
+
 	
 	/**
 	 * Using flood fill to get all the connected components
@@ -112,11 +120,16 @@ public class GBE {
 	 * @return
 	 */
 	public void FloodFill(Integer source, Graph re, Graph g) {
+		//Mark the vertex as visited
 		visited.add(source);
+
+		//Visit every child
 		for (Integer i : g.children.get(source)) 
 			if (!visited.contains(i))
 			{
 				re.addEdge(source, g.attributes.get(source), i, g.attributes.get(i));
+				
+				//DFS
 				FloodFill(i, re, g);
 			}
 	}
