@@ -205,7 +205,7 @@ public class GRAIL {
 	 * @param y
 	 * @return
 	 */
-	public boolean CheckContainment(int x, int y) {
+	public boolean CheckContainment(Integer x, Integer y) {
 		List<Integer> xL = intervalLabel.get(x);
 		List<Integer> yL = intervalLabel.get(y);
 		//Check the intervals one by one

@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import java.util.Scanner;
 
 /**
@@ -132,6 +133,89 @@ public class GBE {
 				//DFS
 				FloodFill(i, re, g);
 			}
+	}
+	
+	/**
+	 * The node in the queue for BFS 
+	 * We need to record the depth of each vertex in the queue
+	 * Therefore, we have to make this class
+	 */
+	class QueueNode {
+		Integer VertexID;
+		int depth;
+		
+		QueueNode parent;
+		QueueNode child;
+		
+		QueueNode(Integer id, int d) {
+			VertexID = id;
+			depth = d;
+		}		
+	}
+	
+	/**
+	 * Given two vertices in the data graph, this method build all the paths between these
+	 * two vertices which satisfy the condition
+	 * @throws Exception 
+	 */
+	public void BFSBuildPath(Integer source, Integer target, int length) throws Exception {
+		//If the source vertex cannot reach the target vertex, halt immediately
+		if (!grailIndex.CheckContainment(source, target))
+			return;
+		
+		//Use KReach Index to determine the distance between the two vertices
+		if (!kreachIndex.query(source, target)) 
+			return;
+
+		//If the two vertices pass the first two exams, we can start to BFS
+		//In order to improve the performance, we use bidirectional BFS
+		Queue<QueueNode> forward = new LinkedList<QueueNode>();
+		Queue<QueueNode> backward = new LinkedList<QueueNode>();
+		
+		int forwardSteps = length / 2;
+		int backwardSteps = length - forwardSteps;
+
+		//Initialize the two queues
+		QueueNode s = new QueueNode(source, 0);
+		QueueNode t = new QueueNode(target, 0);
+		forward.add(s);
+		backward.add(t);
+		
+		HashSet<Integer> visited = new HashSet<Integer>();
+		
+		while (forward.size() > 0 || backward.size() > 0) {
+			//Each time we pop a node from the forward queue and backward queue
+			QueueNode head = forward.poll();
+			visited.add(head.VertexID);
+			if (head.depth + 1 <= forwardSteps) {
+				for (Integer i : dataGraph.children.get(head.VertexID)) {
+					if (!visited.contains(i)) {
+						QueueNode temp = new QueueNode(i, head.depth + 1);
+						temp.parent = head;
+						forward.add(temp);
+					}
+				}
+			} 
+			else {  //The end vertex
+				
+			}
+			
+			QueueNode tail = backward.poll();
+			visited.add(tail.VertexID);
+			if (tail.depth + 1 <= backwardSteps) {
+				for (Integer i : dataGraph.parents.get(tail.VertexID)) {
+					if (!visited.contains(i)) {
+						QueueNode temp = new QueueNode(i, tail.depth + 1);
+						temp.child = tail;								
+						backward.add(temp);
+					}
+				}
+			}
+			else {  //The end vertex
+				
+			}
+		}
+		
 	}
 	
 }
