@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * Actually this class is used to describe the structure of a temporary result during subgraph querying
@@ -9,7 +10,7 @@ import java.util.HashMap;
 public class MatchedCandidates {
 	
 	HashMap<Integer, Integer> mapping = new HashMap<Integer, Integer>();
-	
+	HashMap<String, List<String>> paths = new HashMap<String, List<String>>();
 	/**
 	 * Check whether the a component can join with the current candidates 
 	 * @param list
@@ -57,6 +58,35 @@ public class MatchedCandidates {
 	public MatchedCandidates(MatchedCandidates another) {
 		for (Integer i : another.mapping.keySet()) {
 			mapping.put(i, another.mapping.get(i));
+		}
+	}
+	
+	public void Print() {
+		for (Integer i: mapping.keySet()) {
+			System.out.println(i + " " + mapping.get(i));
+		}
+		
+		System.out.print("Paths between ");
+		
+		for (String k : paths.keySet()) {
+			System.out.println(k);
+			for (String l : paths.get(k))
+				System.out.print(l + " ");
+			System.out.println();
+		}
+	}
+	
+	/**
+	 * Combine the two matching candidates
+	 * @param another
+	 */
+	public void Combine(MatchedCandidates another) {
+		for (Integer k : another.mapping.keySet()) {
+			this.mapping.put(k, another.mapping.get(k));
+		}
+		
+		for (String k : another.paths.keySet()) {
+			this.paths.put(k, another.paths.get(k));
 		}
 	}
 }

@@ -47,16 +47,16 @@ public class GraphParser {
 		
 		
 		//Randomly give the vertices some attributes
-		attributePool = new String[52];		
+		attributePool = new String[26];		
 		for (int i = 0; i < 26; i++) {
 			attributePool[i] = (char)(i + 65) + "";
-			attributePool[i + 26] = (char)(i + 97) + "";
+			//attributePool[i + 26] = (char)(i + 97) + "";
 		}
 		
 		Random r = new Random();
 		for (Integer i : vertices) {
 			attributeList.put(i, new LinkedList<String>());
-			attributeList.get(i).add(attributePool[r.nextInt(52)]);
+			attributeList.get(i).add(attributePool[r.nextInt(26)]);
 		}
 	}
 	

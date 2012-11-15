@@ -12,6 +12,11 @@ import java.util.Scanner;
 public class Joints {
 	Graph graph = new Graph();
 	
+	public static void main(String[] args) throws IOException {
+		Joints test = new Joints();
+		test.Encode("P2P");
+	}
+	
 	public void Encode(String fileName) throws IOException {
 		graph.loadGraphFromFile(fileName);
 		//IndexVertices(fileName + "Vertices");
@@ -68,15 +73,15 @@ public class Joints {
 			
 			for (String s1 : temp.keySet()) {
 
-				String in = s + "," + s1;
+				out.write(s + "," + s1);
 
 				//All the vertices that contains the two attributes
 				for (Integer i : temp.get(s1)) {
-					in += "," + i;
+					out.write("," + i);
 				}
 				
 				//Write into the file
-				out.write(in + "\r\n");
+				out.write("\r\n");
 				
 			}
 		}
@@ -94,7 +99,8 @@ public class Joints {
 	 * @throws IOException 
 	 */
 	public void IndexJoints(String fileName) throws IOException {
-	
+		int totalJonts = 0;
+		
 		//Choose the triples into the index
 		for (Integer i : graph.children.keySet()) {
 
@@ -124,12 +130,13 @@ public class Joints {
 						//Insert a triple into the file
 						jointsIndex.get(attributeA).get(attributeB).get(attributeC).add(i);
 						jointsIndex.get(attributeA).get(attributeB).get(attributeC).add(j);							
-						jointsIndex.get(attributeA).get(attributeC).get(attributeC).add(k);
+						jointsIndex.get(attributeA).get(attributeB).get(attributeC).add(k);
+						totalJonts++;
 				}
 								
 			}
 		}
-		
+		//System.out.println(totalJonts);
 		//Open the file
 		FileWriter fstream = new FileWriter(fileName);
 		BufferedWriter out = new BufferedWriter(fstream);
@@ -147,15 +154,15 @@ public class Joints {
 
 					List<Integer> temp2 = temp1.get(s2);
 					
-					String in = s + "," + s1 + "," + s2;
+					out.write(s + "," + s1 + "," + s2);
 
 					//All the vertices that contains the two attributes
 					for (Integer i : temp2) {
-						in += "," + i;
+						out.write("," + i);
 					}
 					
 					//Write into the file
-					out.write(in + "\r\n");					
+					out.write("\r\n");					
 				}
 				
 				

@@ -1,3 +1,4 @@
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -11,6 +12,39 @@ public class SubQuery {
 	Graph dataGraph;
 	List<Graph> subGraphs;
 	Joints index;
+	
+	public static void main(String[] args) throws IOException {		
+		Graph d = new Graph();
+		d.loadGraphFromFile("p2pData.txt");
+		
+		Graph t = new Graph();
+		t.loadGraphFromFile("querypattern.txt");
+		
+		List<Graph> listGraph = new LinkedList<Graph>();
+		listGraph.add(t);
+		
+		Joints j = new Joints();
+		j.Encode("p2pData.txt");
+		
+		SubQuery sq = new SubQuery(d, listGraph, j);		
+		
+		long startTime = System.nanoTime();
+		HashMap<Graph, LinkedList<MatchedCandidates>> result = sq.Execute();
+		long endTime = System.nanoTime();
+		long duration = endTime - startTime;
+				
+		System.out.println(duration + " nanosecond");
+		
+		for (Graph i : result.keySet()) {
+			i.print();
+			for (MatchedCandidates c : result.get(i)) {
+				c.Print();
+				System.out.println("~~~~~~~~~~~~~~~");
+			}
+			
+			System.out.println("<--------------->");
+		}
+	}
 	
 	/**
 	 * The constructor class
@@ -31,7 +65,14 @@ public class SubQuery {
 	public HashMap<Graph, LinkedList<MatchedCandidates>> Execute() {
 		HashMap<Graph, LinkedList<MatchedCandidates>> r = new HashMap<Graph, LinkedList<MatchedCandidates>>();
 		for (Graph g : subGraphs) {
-			r.put(g, Query(SortComponents(Divide(g)), g));
+			LinkedList<MatchedCandidates> gr = Query(SortComponents(Divide(g)), g);
+			//If any component doesn't have match, the algorithm is terminated
+			if (gr.size() > 0)				
+				r.put(g, gr);
+			else {
+				r.clear();
+				break;
+			}
 		}
 		return r;
 	}
@@ -41,36 +82,62 @@ public class SubQuery {
 	 * @param g
 	 * @return
 	 */
-	public List<String> Divide(Graph g) {
+	public List<String> Divide(Graph input) {
 		List<String> result = new LinkedList<String>();
-		
-		//In the first step, we want to find all the joints
+				
 		//First determine those vertices with both indegree and outdegree
 		HashSet<Integer> cand = new HashSet<Integer>();		
-		for (Integer i : g.indegree.keySet()) {
-			if (g.outdegree.containsKey(i)) {
+		for (Integer i : input.attributes.keySet()) {
+			if (input.outdegree.containsKey(i) && input.indegree.containsKey(i) 
+			 && input.outdegree.get(i) > 0 && input.indegree.get(i) > 0) {
 				cand.add(i);
 			}
 		}
 		
-		
-		//For each of those vertices, choose one child and one parent to build a joint
-		for (Integer i : cand) {			
-			List<Integer> parentsList = g.parents.get(i);
-			List<Integer> childrenList = g.children.get(i);
+		//Make a copy
+		Graph g = new Graph(input);
+
+		while (true) {
+			boolean updated = false;
+			int min = Integer.MAX_VALUE;			
+			Integer jointParent = -1, jointChild = -1, jointCore = -1;
 			
-			Iterator<Integer> pi = parentsList.iterator();
-			Iterator<Integer> ci = childrenList.iterator();
-			while (pi.hasNext() && ci.hasNext()) {
-				Integer p = pi.next();
-				Integer c = ci.next();
-				result.add(p + "," + i + "," + c);
-				g.parents.get(i).remove(p);
-				g.children.get(i).remove(c);				
+			for (Integer i : cand) {
+				List<Integer> parentsList = g.parents.get(i);
+				List<Integer> childrenList = g.children.get(i);
+				
+				for (Integer p : parentsList) {
+					for (Integer c : childrenList) {
+						
+						//Get the attributes
+						String j1 = g.primaryAttribute.get(p);
+						String j2 = g.primaryAttribute.get(i);
+						String j3 = g.primaryAttribute.get(c);
+						
+						List<Integer> triples = index.jointsIndex.get(j1).get(j2).get(j3);
+												
+						if (triples != null && triples.size() < min) {
+							min = triples.size();
+							jointParent = p;
+							jointChild = c;
+							jointCore = i;							
+						}
+					}
+				}
+			}			
+			
+			if (min != Integer.MAX_VALUE && jointParent != -1) {
+				updated = true;
+				result.add(jointParent + "," + jointCore + "," + jointChild);
+				g.children.get(jointCore).remove(jointChild);
+				g.children.get(jointParent).remove(jointCore);
+				g.parents.get(jointCore).remove(jointParent);
+				g.parents.get(jointChild).remove(jointCore);				
+				
 			}
+			if (!updated)
+				break;
 		}
-		
-		//Get all the rest edges
 		
 		for (Integer i : g.children.keySet()) {
 			List<Integer> childrenList = g.children.get(i);
@@ -135,7 +202,7 @@ public class SubQuery {
 	
 	/**
 	 * Using the index to query the data graph
-	 * @param components Already sorted
+	 * @param components already sorted
 	 * @param subGraph
 	 * @return
 	 */
@@ -161,6 +228,9 @@ public class SubQuery {
 				//All the triples that match the attributes
 				List<Integer> triples = index.jointsIndex.get(attributeString[0]).get(attributeString[1]).get(attributeString[2]);
 				
+				if (triples == null || triples.size() == 0)
+					return result;
+				
 				Iterator<Integer> li = triples.iterator();
 				while (li.hasNext()) {
 					ArrayList<Integer> tArrayList = new ArrayList<Integer>(3);
@@ -173,6 +243,9 @@ public class SubQuery {
 			} else {//Edge			
 				List<Integer> pairs = index.edgesIndex.get(attributeString[0]).get(attributeString[1]);
 				
+				if (pairs == null || pairs.size() == 0)
+					return result;
+					
 				Iterator<Integer> li = pairs.iterator();
 				while (li.hasNext()) {
 					ArrayList<Integer> tArrayList = new ArrayList<Integer>(2);

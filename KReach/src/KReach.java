@@ -23,7 +23,7 @@ public class KReach {
 	
 	public static void main(String[] args) throws IOException {
 		KReach k = new KReach();
-		k.Encode("p2pData.txt", 3);
+		k.Encode("Data.txt", 3);
 		k.outputToFile("indexsimple.txt");
 		
 	}
@@ -64,7 +64,7 @@ public class KReach {
 		}
 		System.out.println("Start calculating VC");
 		//Calculat the vertex cover using the simplest method
-		CalculateVertexCoverGreedy();
+		CalculateVertexCoverSimple();
 		System.out.println("The size of VC is " + VC.size());
 		System.out.println("Start building KReach");
 		//Using a K-hop breadth first search to build the index
