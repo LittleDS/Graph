@@ -23,7 +23,8 @@ public class GBE {
 	GRAIL grailIndex = new GRAIL();
 	KReach kreachIndex = new KReach();
 	Graph dataGraph = new Graph();
-		
+	NeighborHood nh = new NeighborHood();
+	
 	//Mark the visited vertices
 	HashSet<Integer> visited = new HashSet<Integer>();
 
@@ -53,7 +54,7 @@ public class GBE {
 //		}
 
 		//Get the matching candidates for each subgraph
-		SubQuery sQ = new SubQuery(dataGraph, sG, jointsIndex);
+		SubQuery sQ = new SubQuery(dataGraph, sG, jointsIndex, nh);
 		HashMap<Graph, LinkedList<MatchedCandidates>> subResult = sQ.Execute();
 		
 //		for (Graph i : subResult.keySet()) {
