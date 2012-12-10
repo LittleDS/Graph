@@ -1,6 +1,7 @@
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -10,6 +11,8 @@ import java.util.List;
 import java.util.Queue;
 import java.util.Scanner;
 import java.util.Stack;
+
+import javax.naming.spi.DirStateFactory.Result;
 
 /**
  * The headquarters class
@@ -23,7 +26,8 @@ public class GBE {
 	GRAIL grailIndex = new GRAIL();
 	KReach kreachIndex = new KReach();
 	Graph dataGraph = new Graph();
-		
+	NeighborHood nh = new NeighborHood();
+	
 	//Mark the visited vertices
 	HashSet<Integer> visited = new HashSet<Integer>();
 
@@ -53,7 +57,7 @@ public class GBE {
 //		}
 
 		//Get the matching candidates for each subgraph
-		SubQuery sQ = new SubQuery(dataGraph, sG, jointsIndex);
+		SubQuery sQ = new SubQuery(dataGraph, sG, jointsIndex, nh);
 		HashMap<Graph, LinkedList<MatchedCandidates>> subResult = sQ.Execute();
 		
 //		for (Graph i : subResult.keySet()) {
@@ -69,6 +73,8 @@ public class GBE {
 //			System.out.println("<--------------->");
 //		}		
 
+		jointsIndex = null;
+		
 		//Determine the components on each super edge
 		for (SuperEdge se : superEdges) {
 			//Currently use this two marker to check errors
@@ -488,4 +494,12 @@ public class GBE {
 		return re;
 	}
 
+	public  ArrayList<LinkedList<QueueNode>> ForwardBFS(Integer source, int depth) {
+		ArrayList<LinkedList<QueueNode>> result = new ArrayList<LinkedList<QueueNode>>();
+		
+	}
+	
+	public BackwardBFS(Integer target, int depth) {
+		
+	}
 }
