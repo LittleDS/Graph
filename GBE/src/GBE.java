@@ -72,7 +72,8 @@ public class GBE {
 //		
 //			System.out.println("<--------------->");
 //		}		
-
+		
+		//Try to release the memory
 		jointsIndex = null;
 		
 		//Determine the components on each super edge
@@ -108,7 +109,8 @@ public class GBE {
 			for (SuperEdge se : superEdges) {
 				if (se.sourceComponent.equals(se.targetComponent)) {
 					LinkedList<MatchedCandidates> mc = subResult.get(se.sourceComponent);
-					ProcessFirstCategorySE(se, mc);			
+					ProcessFirstCategorySE(se, mc);		
+					se.processed = true;
 				}				
 			}
 			
@@ -118,10 +120,6 @@ public class GBE {
 				if (t.processed)
 					it.remove();
 			}
-			
-			
-			
-			
 		}
 	}
 	
@@ -290,14 +288,15 @@ public class GBE {
 			pathChild = new LinkedList<QueueNode>();
 		}		
 	}
-	
-	public List<String> BFSBuildShortestPath(Integer source, Integer target, int length) throws Exception {
-		List<String> re = new LinkedList<String>();
-		return re;
-	}
-
-	public  ArrayList<LinkedList<QueueNode>> ForwardBFS(Integer source, int depth) {
-		ArrayList<LinkedList<QueueNode>> result = new ArrayList<LinkedList<QueueNode>>(depth);
+		
+	/**
+	 * The forward breadth first search
+	 * @param source
+	 * @param depth
+	 * @return
+	 */
+	public  ArrayList<HashMap<Integer, QueueNode>> ForwardBFS(Integer source, int depth) {
+		ArrayList<HashMap<Integer, QueueNode>> result = new ArrayList<HashMap<Integer, QueueNode>>(depth);
 		
 		//The source vertex
 		QueueNode s = new QueueNode(source, 0);
@@ -305,21 +304,23 @@ public class GBE {
 		//The breadth first search queue
 		Queue<QueueNode> forward = new LinkedList<QueueNode>();
 		forward.add(s);
-
+		
 		//The mark hashmap
 		HashMap<Integer, QueueNode> visited = new HashMap<Integer, QueueNode>();
-			
+		
+		visited.put(s.VertexID, s);
+		
 		while (forward.size() > 0) {
 			QueueNode current = forward.poll();
-			visited.put(current.VertexID, current);
 			
 			if (current.depth + 1 <= depth && dataGraph.children.containsKey(current.VertexID)) {
-				for (Integer i : dataGraph.children.get(current.VertexID)) {
+				for (Integer i : dataGraph.children.get(current.VertexID)) {					
 					if (!visited.containsKey(i)) {
 						//Initialize the node
 						QueueNode temp = new QueueNode(i, current.depth + 1);
 						temp.pathParent.add(current);
 						forward.add(temp);
+						visited.put(i, temp);
 					}
 					else {
 						int shortestdepth = visited.get(i).depth;
@@ -330,11 +331,27 @@ public class GBE {
 				}
 			}
 		}
+		
+		for (int i = 0; i < depth; i++)
+			result.add(new HashMap<Integer, QueueNode>());
+		
+		for (Integer i : visited.keySet()) {
+			QueueNode c = visited.get(i);
+			result.get(c.depth).put(i, c);
+		}
+		
 		return result;
 	}
 	
-	public ArrayList<LinkedList<QueueNode>> BackwardBFS(Integer target, int depth) {
-		ArrayList<LinkedList<QueueNode>> result = new ArrayList<LinkedList<QueueNode>>();
+	/**
+	 * The backward breadth first earch
+	 * @param target
+	 * @param depth
+	 * @return
+	 */
+	
+	public ArrayList<HashMap<Integer, QueueNode>> BackwardBFS(Integer target, int depth) {
+		ArrayList<HashMap<Integer, QueueNode>> result = new ArrayList<HashMap<Integer, QueueNode>>();
 		
 		QueueNode t = new QueueNode(target, 0);
 		
@@ -342,10 +359,10 @@ public class GBE {
 		backward.add(t);
 		
 		HashMap<Integer, QueueNode> visited = new HashMap<Integer, QueueNode>();
+		visited.put(t.VertexID, t);
 		
 		while (backward.size() > 0) {
 			QueueNode current = backward.poll();
-			visited.put(current.VertexID, current);
 			
 			if (current.depth + 1 <= depth && dataGraph.parents.containsKey(current.VertexID)) {
 				for (Integer i : dataGraph.parents.get(current.VertexID)) {
@@ -353,6 +370,7 @@ public class GBE {
 						QueueNode temp = new QueueNode(i, current.depth + 1);
 						temp.pathChild.add(current);
 						backward.add(temp);
+						visited.put(i, temp);
 					}
 					else {
 						int shortestdepth = visited.get(i).depth;
@@ -364,6 +382,95 @@ public class GBE {
 			}
 		}
 		
+		for (int i = 0; i < depth; i++)
+			result.add(new HashMap<Integer, QueueNode>());
+		
+		for (Integer i : visited.keySet()) {
+			QueueNode c = visited.get(i);
+			result.get(c.depth).put(i, c);
+		}
+		
 		return result;
+	}
+	
+	/**
+	 * Given the breadth first search of source and target, try to build the paths
+	 * @param source
+	 * @param target
+	 * @return
+	 */
+	public List<String> BuildPath(ArrayList<HashMap<Integer, QueueNode>> source, ArrayList<HashMap<Integer, QueueNode>> target) {
+		boolean found = false;
+		
+		List<String> result = new LinkedList<String>();
+		
+		search:
+		for (int i = 0; i < source.size(); i++) {
+			//The forward layers
+			HashMap<Integer, QueueNode> forwardLevel = source.get(i);			
+			
+			for (int j = target.size() - 1; j >= 0; j--) {
+				//The backward layers
+				HashMap<Integer, QueueNode> backwardLevel = target.get(j);
+				
+				for (Integer k : forwardLevel.keySet())
+					if (backwardLevel.containsKey(k)) {						
+						found = true;
+						
+						//Build the paths here
+						QueueNode fNode = forwardLevel.get(k);
+						List<String> parentPaths = new LinkedList<String>();
+						DFSP(fNode, "", parentPaths);
+						
+						QueueNode bNode = backwardLevel.get(k);
+						List<String> childPaths = new LinkedList<String>();
+						DFSC(bNode,"", childPaths);
+						
+						//Connect them
+						for (String s1 : parentPaths) 
+							for (String s2 : childPaths) {
+								String p =  s1 + k + s2;
+								result.add(p);
+							}
+					}
+				if (found) 
+					break search;
+			}
+		}
+		
+		return result;
+	}
+	
+	/**
+	 * Recursively build the path from source to the intersection point
+	 * @param node
+	 * @param s
+	 * @param re
+	 */
+	public void DFSP(QueueNode node, String s, List<String> re) {
+		if (node.pathParent.size() == 0) {
+			re.add(s);
+			return;
+		}	
+		for (QueueNode q : node.pathParent) {
+			DFSP(q,  q.VertexID + "," + s, re);			
+		}
+			
+	}
+	
+	/**
+	 * Recursively build the path from the inserction point to the target
+	 * @param node
+	 * @param s
+	 * @param re
+	 */
+	public void DFSC(QueueNode node, String s, List<String> re) {
+		if (node.pathChild.size() == 0) {
+			re.add(s);
+			return;
+		}
+		for (QueueNode q : node.pathChild) {
+			DFSC(q, s + "," + q.VertexID, re);
+		}
 	}
 }
