@@ -277,6 +277,7 @@ public class NeighborHood2 {
 			for (int i = 0; i < slist.length; i += 2)
 				localInfo.put(slist[i], Integer.parseInt(slist[i + 1]));			
 		}
+		gcScanner.close();
 		
 		File gpFile = new File(fileName + "Grandparent");
 		
@@ -292,5 +293,7 @@ public class NeighborHood2 {
 			for (int i = 0; i < slist.length; i += 2)
 				localInfo.put(slist[i], Integer.parseInt(slist[i + 1]));
 		}
+		
+		gpScanner.close();
 	}	
 }

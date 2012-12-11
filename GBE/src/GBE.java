@@ -280,226 +280,90 @@ public class GBE {
 		Integer VertexID;
 		int depth;
 		
-		QueueNode pathParent;
-		QueueNode pathChild;
+		LinkedList<QueueNode> pathParent;
+		LinkedList<QueueNode> pathChild;
 		
 		QueueNode(Integer id, int d) {
 			VertexID = id;
 			depth = d;
+			pathParent = new LinkedList<QueueNode>();
+			pathChild = new LinkedList<QueueNode>();
 		}		
 	}
 	
 	public List<String> BFSBuildShortestPath(Integer source, Integer target, int length) throws Exception {
 		List<String> re = new LinkedList<String>();
-		
-//		//If the source vertex cannot reach the target vertex, halt immediately
-//		if (!grailIndex.CheckContainment(source, target))
-//			return;
-//		
-//		//Use KReach Index to determine the distance between the two vertices
-//		if (!kreachIndex.query(source, target)) 
-//			return;
-
-		//If the two vertices pass the first two exams, we can start to BFS
-		//In order to improve the performance, we use bidirectional BFS
-		Queue<QueueNode> forward = new LinkedList<QueueNode>();
-		Queue<QueueNode> backward = new LinkedList<QueueNode>();
-		
-		//Determine the forward steps and backward steps
-		int forwardSteps = length / 2;
-		int backwardSteps = length - forwardSteps;
-
-		//Initialize the two queues
-		QueueNode s = new QueueNode(source, 0);
-		QueueNode t = new QueueNode(target, 0);
-		
-		forward.add(s);
-		backward.add(t);
-		
-		HashMap<Integer, List<QueueNode>> forwardVisited = new HashMap<Integer, List<QueueNode>>();
-		HashMap<Integer, List<QueueNode>> backwardVisited = new HashMap<Integer, List<QueueNode>>();
-		
-		forwardVisited.put(s.VertexID, new LinkedList<QueueNode>());
-		forwardVisited.get(s.VertexID).add(s);
-		
-		backwardVisited.put(t.VertexID, new LinkedList<QueueNode>());
-		backwardVisited.get(t.VertexID).add(t);
-		
-		while (forward.size() > 0 || backward.size() > 0) {
-			
-			//Each time we pop a node from the forward queue and backward queue
-			if (forward.size() > 0) {
-				QueueNode head = forward.poll();										
-				
-				if (head.depth + 1 <= forwardSteps && !backwardVisited.containsKey(head.VertexID)) {
-				
-					for (Integer i : dataGraph.children.get(head.VertexID)) {
-						boolean flag = false;
-						QueueNode temp = new QueueNode(i, head.depth + 1);
-						temp.pathParent = head;
-						
-						//Indicate whether we have found a new path
-						boolean fVFlag = false;
-						
-						if (!forwardVisited.containsKey(i)) {
-							forwardVisited.put(i, new LinkedList<QueueNode>());
-							forwardVisited.get(i).add(temp);
-							fVFlag = true;
-						} 
-						else {
-							//Get the first element of the list
-							//Since the depth of all the elements in the list should be the same
-							//We can use the first element as the representative
-							Iterator<QueueNode> it = forwardVisited.get(i).iterator();
-							QueueNode first = it.next();
-							
-							//The depth of the current element should be equal to head.depth + 1
-							//If the depth is equal to the shortest one, we add this node to the list
-							//However, since this node is already visited before, we don't add it to the BFS queue
-							//Otherwise, we will expand the same vertex multiple times
-							if (head.depth + 1 == first.depth) {
-								forwardVisited.get(i).add(temp);
-								fVFlag = true;
-							}
-						}
-						
-						if (backwardVisited.containsKey(i) && fVFlag) {
-							flag = true;
-							
-							//We have found a intersection vertex
-							List<QueueNode> tempList = backwardVisited.get(i);
-							
-							//A temp node used to recursively get the path from source to the current vertex
-							QueueNode tempHead = head;
-							
-							Stack<Integer> verticesOnPath = new Stack<Integer>();
-							
-							while (tempHead.pathParent != null) {
-								verticesOnPath.push(tempHead.VertexID);						
-								tempHead = tempHead.pathParent;						
-							}
-							verticesOnPath.push(tempHead.VertexID);
-							
-							StringBuffer path = new StringBuffer();
-
-							//Have to reverse the path
-							while (!verticesOnPath.empty()) {
-								path.append(verticesOnPath.pop());
-								path.append(',');
-							}
-							
-							for (QueueNode q : tempList) 
-								if (head.depth + 1 + q.depth <= length)
-								{
-									StringBuffer emptyString = new StringBuffer();
-									QueueNode tempTail = q;
-									while (tempTail.pathChild != null) {
-										emptyString.append(tempTail.VertexID);
-										emptyString.append(',');
-										tempTail = tempTail.pathChild;
-									}
-									emptyString.append(tempTail.VertexID);
-									
-									//System.out.println(path.append(emptyString).toString());
-									re.add(path.append(emptyString).toString());
-								}
-						}				
-						
-						if (!flag)
-							forward.add(temp);
-						
-						
-					}
-				}
-				
-			}
-			
-			//The backward search
-			if (backward.size() > 0) {
-				QueueNode tail = backward.poll();		
-				
-				if (tail.depth + 1 <= backwardSteps && !forwardVisited.containsKey(tail.VertexID)) {
-					for (Integer i : dataGraph.parents.get(tail.VertexID)) {
-						boolean flag = false;
-						//Find a path
-						
-						QueueNode temp = new QueueNode(i, tail.depth + 1);
-						temp.pathChild = tail;
-						
-						//Indicate whether we have found a new path
-						boolean fVFlag = false;
-						
-						if (!backwardVisited.containsKey(i)) {
-							backwardVisited.put(i, new LinkedList<QueueNode>());
-							backwardVisited.get(i).add(temp);
-							fVFlag = true;
-						}
-						else {
-							Iterator<QueueNode> it = backwardVisited.get(i).iterator();
-							QueueNode first = it.next();
-							
-							if (tail.depth + 1 == first.depth) {
-								backwardVisited.get(i).add(temp);
-								fVFlag = true;
-							}
-						}
-
-						if (forwardVisited.containsKey(i) && fVFlag) {
-							flag = true;
-							List<QueueNode> tempList = forwardVisited.get(i);
-
-							QueueNode tempTail = tail;
-							
-							StringBuffer path = new StringBuffer();
-							
-							while (tempTail.pathChild != null) {
-								path.append(tempTail.VertexID);
-								path.append(',');
-								tempTail = tempTail.pathChild;
-							}
-							path.append(tempTail.VertexID);
-							
-							for (QueueNode q : tempList)
-								if (q.depth + tail.depth + 1 <= length) {
-									
-									QueueNode tempHead = q;
-									
-									Stack<Integer> backPath = new Stack<Integer>();
-									
-									while (tempHead.pathParent != null) {
-										backPath.push(tempHead.VertexID);
-										tempHead = tempHead.pathParent;
-									}
-									
-									backPath.push(tempHead.VertexID);
-									
-									StringBuffer emptyString = new StringBuffer();
-									
-									while (!backPath.empty()) {
-										emptyString.append(backPath.pop());
-										emptyString.append(',');
-									}
-									
-									//System.out.println(emptyString.append(path).toString());
-									re.add(emptyString.append(path).toString());
-								}					
-						}
-						
-						if (!flag)
-							backward.add(temp);
-					}
-				}					
-			}				
-		}
 		return re;
 	}
 
 	public  ArrayList<LinkedList<QueueNode>> ForwardBFS(Integer source, int depth) {
-		ArrayList<LinkedList<QueueNode>> result = new ArrayList<LinkedList<QueueNode>>();
+		ArrayList<LinkedList<QueueNode>> result = new ArrayList<LinkedList<QueueNode>>(depth);
 		
+		//The source vertex
+		QueueNode s = new QueueNode(source, 0);
+
+		//The breadth first search queue
+		Queue<QueueNode> forward = new LinkedList<QueueNode>();
+		forward.add(s);
+
+		//The mark hashmap
+		HashMap<Integer, QueueNode> visited = new HashMap<Integer, QueueNode>();
+			
+		while (forward.size() > 0) {
+			QueueNode current = forward.poll();
+			visited.put(current.VertexID, current);
+			
+			if (current.depth + 1 <= depth && dataGraph.children.containsKey(current.VertexID)) {
+				for (Integer i : dataGraph.children.get(current.VertexID)) {
+					if (!visited.containsKey(i)) {
+						//Initialize the node
+						QueueNode temp = new QueueNode(i, current.depth + 1);
+						temp.pathParent.add(current);
+						forward.add(temp);
+					}
+					else {
+						int shortestdepth = visited.get(i).depth;
+						if (current.depth + 1 == shortestdepth) {
+							visited.get(i).pathParent.add(current);							
+						}
+					}
+				}
+			}
+		}
+		return result;
 	}
 	
-	public BackwardBFS(Integer target, int depth) {
+	public ArrayList<LinkedList<QueueNode>> BackwardBFS(Integer target, int depth) {
+		ArrayList<LinkedList<QueueNode>> result = new ArrayList<LinkedList<QueueNode>>();
 		
+		QueueNode t = new QueueNode(target, 0);
+		
+		Queue<QueueNode>  backward = new LinkedList<QueueNode>();
+		backward.add(t);
+		
+		HashMap<Integer, QueueNode> visited = new HashMap<Integer, QueueNode>();
+		
+		while (backward.size() > 0) {
+			QueueNode current = backward.poll();
+			visited.put(current.VertexID, current);
+			
+			if (current.depth + 1 <= depth && dataGraph.parents.containsKey(current.VertexID)) {
+				for (Integer i : dataGraph.parents.get(current.VertexID)) {
+					if (!visited.containsKey(i)) {
+						QueueNode temp = new QueueNode(i, current.depth + 1);
+						temp.pathChild.add(current);
+						backward.add(temp);
+					}
+					else {
+						int shortestdepth = visited.get(i).depth;
+						if (current.depth + 1 == shortestdepth) {
+							visited.get(i).pathChild.add(current);
+						}
+					}
+				}
+			}
+		}
+		
+		return result;
 	}
 }
