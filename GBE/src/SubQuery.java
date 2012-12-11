@@ -17,13 +17,13 @@ public class SubQuery {
 	public static void main(String[] args) throws IOException {		
 
 		Joints j = new Joints();
-		j.loadEdgeIndexFromFile("P2PEdges");
-		j.loadJointIndexFromFile("P2PJoints");
+		j.loadEdgeIndexFromFile("AmazonEdges");
+		j.loadJointIndexFromFile("AmazonJoints");
 				
 		System.out.println("Finish Loading Index....");
 		
 		Graph d = new Graph();
-		d.loadGraphFromFile("P2P");
+		d.loadGraphFromFile("Amazon");
 
 		System.out.println("Finish Loading Data Graph....");
 		
@@ -51,9 +51,10 @@ public class SubQuery {
 		long duration = endTime - startTime;
 				
 		System.out.println(duration + " nanosecond");
-		
 		for (Graph i : result.keySet()) {
 			i.print();
+			System.out.println("Total Matches: " + result.get(i).size());
+			
 			for (MatchedCandidates c : result.get(i)) {
 				c.Print();
 				System.out.println("~~~~~~~~~~~~~~~");
@@ -139,6 +140,10 @@ public class SubQuery {
 							jointParent = p;
 							jointChild = c;
 							jointCore = i;							
+						} 
+						else if (triples == null) {
+							result.clear();
+							return result;
 						}
 					}
 				}
@@ -175,10 +180,12 @@ public class SubQuery {
 	 * @return
 	 */
 	public List<String> SortComponents(List<String> components) {
-	
 		//We need to determine an order of those components first
 		//Because we have to make sure the next component has at least one intersection with the previous components
 		List<String> componentsInOrder = new LinkedList<String>();		
+		
+		if (components.size() == 0)
+			return componentsInOrder;
 		
 		//First insert an initial component
 		componentsInOrder.add(components.get(0));
@@ -325,6 +332,11 @@ public class SubQuery {
 					
 			}
 			
+			if (lists.size() == 0) {
+				result.clear();
+				return result;
+			}
+			
 			//First time, we insert all the candidates into the result set
 			if (result.size() == 0) {
 				Iterator<ArrayList<Integer>> li = lists.iterator();
@@ -354,12 +366,18 @@ public class SubQuery {
 					
 				}
 				
+				if (newResult.size() == 0) {
+					result.clear();
+					break;				
+				}			
+				
 				//Clear the old result set forcibly
 				result.clear();
 				//Update the result set to the new one
 				result = newResult;
 			}
 		}
+		
 		return result;
 	}
 }	
