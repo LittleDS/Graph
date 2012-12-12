@@ -35,10 +35,20 @@ public class GBE {
 	public static void main(String[] args) throws Exception {
 		GBE test = new GBE();
 		test.dataGraph.loadGraphFromFile("datagraph.txt");
-		test.jointsIndex.Encode("datagraph.txt");
-		test.Query("querypattern.txt");
+		test.debug();
+//		test.jointsIndex.Encode("datagraph.txt");
+//		test.Query("querypattern.txt");
 	}
 	
+	public void debug() {
+		ArrayList<HashMap<Integer, QueueNode>> t = BackwardBFS(8, 3);
+		for (int i = 0; i < t.size(); i++) {
+			HashMap<Integer, QueueNode> c = t.get(i);
+			for (Integer j : c.keySet()) 
+				System.out.print(j + " ");
+			System.out.println();
+		}
+	}
 	public void Query(String fileName) throws Exception {
 		//Divide the query pattern into subgraphs and super edges
 		List<Graph> sG =  DivideGraph(fileName);
@@ -123,6 +133,8 @@ public class GBE {
 			SuperEdge t = it.next();
 
 			//Process the next super edge
+			
+			
 			
 		}
 	}
@@ -323,6 +335,9 @@ public class GBE {
 
 		backwardVisited.put(t.VertexID, t);
 
+		HashSet<Integer> intersections = new HashSet<Integer>();
+		
+		
 		while (forward.size() > 0 || backward.size() > 0) {
 
 			//Each time we pop a node from the forward queue and backward queue
@@ -351,28 +366,21 @@ public class GBE {
 							//However, since this node is already visited before, we don't add it to the BFS queue
 							//Otherwise, we will expand the same vertex multiple times
 							if (head.depth + 1 == q.depth) {
-								forwardVisited.get(i).pathParent.add(head);
+								q.pathParent.add(head);
 								fVFlag = true;
 							}
+							
+							//Since this vertex has been visited before
+							//No matter what we don't need to insert it into the queue again
+							flag = true;
 						}
 						
 						if (backwardVisited.containsKey(i) && fVFlag) {
 							flag = true;
 
-							//Build the paths here
-							QueueNode fNode = forwardVisited.get(i);
-							List<String> parentPaths = new LinkedList<String>();
-							DFSP(fNode, "", parentPaths);
-							
-							QueueNode bNode = backwardVisited.get(i);
-							List<String> childPaths = new LinkedList<String>();
-							DFSC(bNode,"", childPaths);
-							
-							for (String s1 : parentPaths) 
-								for (String s2 : childPaths) {
-									String p =  s1 + i + s2;
-									re.add(p);
-								}							
+							if (!intersections.contains(i))
+								intersections.add(i);
+								
 						}	
 
 						if (!flag)
@@ -388,6 +396,7 @@ public class GBE {
 				QueueNode tail = backward.poll();	
 
 				if (tail.depth + 1 <= backwardSteps && !forwardVisited.containsKey(tail.VertexID)) {
+					
 					for (Integer i : dataGraph.parents.get(tail.VertexID)) {
 						boolean flag = false;
 						//Find a path
@@ -406,15 +415,20 @@ public class GBE {
 							QueueNode q =  backwardVisited.get(i);
 
 							if (tail.depth + 1 == q.depth) {
-								q.pathChild.add(temp);
+								q.pathChild.add(tail);
 								fVFlag = true;
 							}
+							
+							flag = true;
 						}
 
+						
 						if (forwardVisited.containsKey(i) && fVFlag) {
 							flag = true;
-
-
+		
+							if (!intersections.contains(i))
+								intersections.add(i);
+															
 						}
 
 						if (!flag)
@@ -423,6 +437,24 @@ public class GBE {
 				}	
 			}	
 		}
+		
+		for (Integer i : intersections) {
+			//Build the paths here
+			QueueNode fNode = forwardVisited.get(i);
+			List<String> parentPaths = new LinkedList<String>();
+			DFSP(fNode, "", parentPaths);
+			
+			QueueNode bNode = backwardVisited.get(i);
+			List<String> childPaths = new LinkedList<String>();
+			DFSC(bNode,"", childPaths);
+			
+			for (String s1 : parentPaths) 
+				for (String s2 : childPaths) {
+					String p =  s1 + i + s2;
+					re.add(p);
+				}							
+		}
+
 		return re;
 	}
 	
@@ -433,7 +465,7 @@ public class GBE {
 	 * @return
 	 */
 	public  ArrayList<HashMap<Integer, QueueNode>> ForwardBFS(Integer source, int depth) {
-		ArrayList<HashMap<Integer, QueueNode>> result = new ArrayList<HashMap<Integer, QueueNode>>(depth);
+		ArrayList<HashMap<Integer, QueueNode>> result = new ArrayList<HashMap<Integer, QueueNode>>(depth + 1);
 		
 		//The source vertex
 		QueueNode s = new QueueNode(source, 0);
@@ -469,7 +501,7 @@ public class GBE {
 			}
 		}
 		
-		for (int i = 0; i < depth; i++)
+		for (int i = 0; i <= depth; i++)
 			result.add(new HashMap<Integer, QueueNode>());
 		
 		for (Integer i : visited.keySet()) {
@@ -488,7 +520,7 @@ public class GBE {
 	 */
 	
 	public ArrayList<HashMap<Integer, QueueNode>> BackwardBFS(Integer target, int depth) {
-		ArrayList<HashMap<Integer, QueueNode>> result = new ArrayList<HashMap<Integer, QueueNode>>();
+		ArrayList<HashMap<Integer, QueueNode>> result = new ArrayList<HashMap<Integer, QueueNode>>(depth + 1);
 		
 		QueueNode t = new QueueNode(target, 0);
 		
@@ -519,7 +551,7 @@ public class GBE {
 			}
 		}
 		
-		for (int i = 0; i < depth; i++)
+		for (int i = 0; i <= depth; i++)
 			result.add(new HashMap<Integer, QueueNode>());
 		
 		for (Integer i : visited.keySet()) {
@@ -528,6 +560,18 @@ public class GBE {
 		}
 		
 		return result;
+	}
+	
+	/**
+	 * 
+	 * @param source
+	 * @param target
+	 * @return
+	 */
+	public List<String> BuildPath(Integer source, Integer target, int depth) {
+		ArrayList<HashMap<Integer, QueueNode>> f = ForwardBFS(source, depth);
+		ArrayList<HashMap<Integer, QueueNode>> b = BackwardBFS(target, depth);
+		return BuildPath(f, b);
 	}
 	
 	/**
