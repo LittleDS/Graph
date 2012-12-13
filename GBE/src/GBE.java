@@ -1,6 +1,5 @@
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -22,7 +21,6 @@ public class GBE {
 	//The input for this class
 	Joints jointsIndex = new Joints();
 	GRAIL grailIndex = new GRAIL();
-	KReach kreachIndex = new KReach();
 	Graph dataGraph = new Graph();
 	NeighborHood nh = new NeighborHood();
 	
@@ -49,6 +47,7 @@ public class GBE {
 			System.out.println();
 		}
 	}
+	
 	public void Query(String fileName) throws Exception {
 		//Divide the query pattern into subgraphs and super edges
 		List<Graph> sG =  DivideGraph(fileName);
@@ -83,6 +82,7 @@ public class GBE {
 		
 		//Try to release the memory
 		jointsIndex = null;
+		nh = null;
 		
 		//Determine the components on each super edge
 		for (SuperEdge se : superEdges) {
@@ -130,12 +130,77 @@ public class GBE {
 			}
 			
 			it = superEdges.iterator();
-			SuperEdge t = it.next();
+			if (it.hasNext()) {
+				SuperEdge t = it.next();
+				
+				//Determine the depths
+				int forwardDepth = t.length / 2;
+				int backwardDepth = t.length - forwardDepth;
+				
+				//Process the next super edge
+				LinkedList<MatchedCandidates> mcSource = subResult.get(t.sourceComponent);
+				LinkedList<MatchedCandidates> mcTarget = subResult.get(t.targetComponent);
+				
+				//Store the buffered BFS
+				HashMap<Integer, ArrayList<HashMap<Integer, QueueNode>>> fBFS = new HashMap<Integer, ArrayList<HashMap<Integer, QueueNode>>>();
+				HashMap<Integer, ArrayList<HashMap<Integer, QueueNode>>> bBFS = new HashMap<Integer, ArrayList<HashMap<Integer, QueueNode>>>();			
 
-			//Process the next super edge
-			
-			
-			
+				HashSet<Integer> visitedMapping = new HashSet<Integer>();				
+				
+				//BFS for each of the candidate vertices
+				for (MatchedCandidates mci : mcSource) {
+					Integer mt = mci.mapping.get(t.source);
+					if (!visitedMapping.contains(mt))
+						fBFS.put(mt, ForwardBFS(mt, forwardDepth));
+				}
+				
+				visitedMapping.clear();			
+				for (MatchedCandidates mci : mcTarget) {
+					Integer mt = mci.mapping.get(t.target);
+					if (!visitedMapping.contains(mt))
+						bBFS.put(mt, BackwardBFS(mt, backwardDepth));
+				}
+				
+				//Mark for whether we find a match
+				boolean haveMatch = false;
+				
+				//Make a combination copy of the two components
+				//In case that there is a match, we need to update the result table
+				Graph combinedComponent = new Graph(t.sourceComponent);
+				combinedComponent.Combine(t.targetComponent);
+				
+				List<MatchedCandidates> newMC = new LinkedList<MatchedCandidates>();
+				
+				for (MatchedCandidates mci : mcSource) {
+					Integer m1 = mci.mapping.get(t.source);
+					ArrayList<HashMap<Integer, QueueNode>> fB = fBFS.get(m1);
+					for (MatchedCandidates mcj : mcTarget) {
+						Integer m2 = mcj.mapping.get(t.target);
+						ArrayList<HashMap<Integer, QueueNode>> bB = bBFS.get(m2);
+						List<String> ps = BuildPath(fB, bB);
+
+						//If there is path between the two vertices
+						if (ps.size() > 0) {
+							haveMatch = true;
+							MatchedCandidates temp = new MatchedCandidates(mci);
+							mci.Combine(mcj);
+							newMC.add(temp);						
+						}
+					}
+				}
+								
+				if (haveMatch) {
+					//Update the source and target component of each super edge
+					
+					//Update the result table
+					
+				}
+				else {
+					//It means that there is no valid paths between the two vertices
+					//and thus there is no matching for the query pattern
+					return;
+				}
+			}
 		}
 	}
 	
@@ -562,18 +627,7 @@ public class GBE {
 		return result;
 	}
 	
-	/**
-	 * 
-	 * @param source
-	 * @param target
-	 * @return
-	 */
-	public List<String> BuildPath(Integer source, Integer target, int depth) {
-		ArrayList<HashMap<Integer, QueueNode>> f = ForwardBFS(source, depth);
-		ArrayList<HashMap<Integer, QueueNode>> b = BackwardBFS(target, depth);
-		return BuildPath(f, b);
-	}
-	
+
 	/**
 	 * Given the breadth first search of source and target, try to build the paths
 	 * @param source

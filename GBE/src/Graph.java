@@ -212,7 +212,45 @@ public class Graph implements Comparable<Graph> {
 			return 1;
 		else
 			return 0;
-			
-	
+				
+	}
+
+	public void Combine(Graph another) {
+		//Attributes
+		for (Integer i : another.attributes.keySet()) {
+			attributes.put(i, new LinkedList<String>());
+			for (String s : another.attributes.get(i)) {
+				attributes.get(i).add(s);
+			}
+		}
+		
+		//Primary Attribute
+		for (Integer i : another.primaryAttribute.keySet()) {
+			primaryAttribute.put(i, another.primaryAttribute.get(i));
+		}
+		
+		totalEdges += another.totalEdges;
+		
+		//Children		
+		for (Integer i : another.children.keySet()) {
+			children.put(i, new LinkedList<Integer>());
+			for (Integer j : another.children.get(i)) {
+				children.get(i).add(j);
+			}
+		}
+		
+		//Parents
+		for (Integer i : another.parents.keySet()) {
+			parents.put(i, new LinkedList<Integer>());
+			for (Integer j : another.parents.get(i))
+				parents.get(i).add(j);
+		}
+		
+		graphLoaded = true;
+		
+		indegree.clear();
+		outdegree.clear();
+		
+		calculateDegree();		
 	}
 }
