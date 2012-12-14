@@ -66,7 +66,7 @@ public class MatchedCandidates {
 			System.out.println(i + " " + mapping.get(i));
 		}
 		
-		System.out.print("Paths between ");
+		System.out.println("Paths between ");
 		
 		for (String k : paths.keySet()) {
 			System.out.println(k);
@@ -74,6 +74,8 @@ public class MatchedCandidates {
 				System.out.print(l + " ");
 			System.out.println();
 		}
+		
+		System.out.println();
 	}
 	
 	/**

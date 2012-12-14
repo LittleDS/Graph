@@ -17,18 +17,18 @@ public class SubQuery {
 	public static void main(String[] args) throws IOException {		
 
 		Joints j = new Joints();
-		j.loadEdgeIndexFromFile("AmazonEdges");
-		j.loadJointIndexFromFile("AmazonJoints");
+		j.loadEdgeIndexFromFile("datagraph.txtEdges");
+		j.loadJointIndexFromFile("datagraph.txtJoints");
 				
 		System.out.println("Finish Loading Index....");
 		
 		Graph d = new Graph();
-		d.loadGraphFromFile("Amazon");
+		d.loadGraphFromFile("datagraph.txt");
 
 		System.out.println("Finish Loading Data Graph....");
 		
 		Graph t = new Graph();
-		t.loadGraphFromFile("querypattern.txt");
+		t.loadGraphFromFile("q1.txt");
 		
 		System.out.println("Finish Loading Query Pattern....");
 		
@@ -272,21 +272,10 @@ public class SubQuery {
 					
 					for (int i = 0; i < ids.length; i++) {
 						//The neighborhood of query pattern
-						HashMap<String, Integer> nhQ = localnh.ChildHood.get(idsInteger[i]);
-						HashMap<String, Integer> nhD = nhindex.ChildHood.get(tArrayList.get(i));
-						
-						for (String k : nhQ.keySet()) {
-							if (!nhD.containsKey(k)) {
-								flag = false;
-								break;
-							}
-							else if (nhD.get(k) < nhQ.get(k)) {
-								flag = false;
-								break;
-							}							
-						}
-						if (!flag)
-							break;
+						if (!nhindex.Check(localnh, idsInteger[i], tArrayList.get(i))) {
+							flag = false;
+							break;						
+						}					
 					}
 					
 					if (flag) 
@@ -306,24 +295,12 @@ public class SubQuery {
 					tArrayList.add(1, li.next());
 
 					boolean flag = true;
-					
+
 					for (int i = 0; i < ids.length; i++) {
-						//The neighborhood of query pattern
-						HashMap<String, Integer> nhQ = localnh.ChildHood.get(idsInteger[i]);
-						HashMap<String, Integer> nhD = nhindex.ChildHood.get(tArrayList.get(i));
-						
-						for (String k : nhQ.keySet()) {
-							if (!nhD.containsKey(k)) {
-								flag = false;
-								break;
-							}
-							else if (nhD.get(k) < nhQ.get(k)) {
-								flag = false;
-								break;
-							}
-						}
-						if (!flag)
-							break;
+						if (!nhindex.Check(localnh, idsInteger[i], tArrayList.get(i))) {
+							flag = false;
+							break;						
+						}											
 					}
 					
 					if (flag) 

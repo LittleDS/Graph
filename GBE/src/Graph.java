@@ -215,6 +215,10 @@ public class Graph implements Comparable<Graph> {
 				
 	}
 
+	/**
+	 * Combine this graph with another one
+	 * @param another
+	 */
 	public void Combine(Graph another) {
 		//Attributes
 		for (Integer i : another.attributes.keySet()) {

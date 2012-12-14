@@ -24,7 +24,7 @@ public class GBE {
 	Graph dataGraph = new Graph();
 	NeighborHood nh = new NeighborHood();
 	
-	//Mark the visited vertices
+	//Mark the visited vertices for divide the graph and floodfill
 	HashSet<Integer> visited = new HashSet<Integer>();
 
 	//Store all the super edges
@@ -32,22 +32,20 @@ public class GBE {
 	
 	public static void main(String[] args) throws Exception {
 		GBE test = new GBE();
+		test.jointsIndex.loadEdgeIndexFromFile("datagraph.txtEdges");
+		test.jointsIndex.loadJointIndexFromFile("datagraph.txtJoints");				
+		System.out.println("Finish Loading Index....");
+		
 		test.dataGraph.loadGraphFromFile("datagraph.txt");
-		test.debug();
-//		test.jointsIndex.Encode("datagraph.txt");
-//		test.Query("querypattern.txt");
+		System.out.println("Finish Loading Data Graph....");
+
+		test.nh.Encode(test.dataGraph);
+		System.out.println("Finish Building NeighborHood Index");		
+
+		System.out.println("Start Querying");
+		test.Query("querypattern.txt");
 	}
-	
-	public void debug() {
-		ArrayList<HashMap<Integer, QueueNode>> t = BackwardBFS(8, 3);
-		for (int i = 0; i < t.size(); i++) {
-			HashMap<Integer, QueueNode> c = t.get(i);
-			for (Integer j : c.keySet()) 
-				System.out.print(j + " ");
-			System.out.println();
-		}
-	}
-	
+		
 	public void Query(String fileName) throws Exception {
 		//Divide the query pattern into subgraphs and super edges
 		List<Graph> sG =  DivideGraph(fileName);
@@ -55,30 +53,18 @@ public class GBE {
 		//Sort the graph list such that larger graph is going to be tested earlier
 		Collections.sort(sG);
 		
-//		for (SuperEdge se : superEdges)
-//			System.out.println(se.source + " " + se.target + " " + se.length);
-//		
-//		for (Graph i : sG) {
-//			i.print();
-//			System.out.println();
-//		}
-
 		//Get the matching candidates for each subgraph
 		SubQuery sQ = new SubQuery(dataGraph, sG, jointsIndex, nh);
 		HashMap<Graph, LinkedList<MatchedCandidates>> subResult = sQ.Execute();
 		
-//		for (Graph i : subResult.keySet()) {
-//			System.out.println("The components:");
-//			i.print();
-//			System.out.println("The matchings:");
-//			
-//			for (MatchedCandidates c : subResult.get(i)) {
-//				c.Print();
-//				System.out.println("~~~~~~~~~~~~~~~");
-//			}
-//		
-//			System.out.println("<--------------->");
-//		}		
+//		for (Graph gi : subResult.keySet()) {
+//			System.out.println("The component:");
+//			gi.print();
+//			System.out.println("The matches:");
+//			for (MatchedCandidates mi : subResult.get(gi))
+//				mi.Print();
+//			System.out.println();
+//		}
 		
 		//Try to release the memory
 		jointsIndex = null;
@@ -169,7 +155,7 @@ public class GBE {
 				Graph combinedComponent = new Graph(t.sourceComponent);
 				combinedComponent.Combine(t.targetComponent);
 				
-				List<MatchedCandidates> newMC = new LinkedList<MatchedCandidates>();
+				LinkedList<MatchedCandidates> newMC = new LinkedList<MatchedCandidates>();
 				
 				for (MatchedCandidates mci : mcSource) {
 					Integer m1 = mci.mapping.get(t.source);
@@ -183,23 +169,53 @@ public class GBE {
 						if (ps.size() > 0) {
 							haveMatch = true;
 							MatchedCandidates temp = new MatchedCandidates(mci);
-							mci.Combine(mcj);
+							temp.Combine(mcj);
+							temp.paths.put(m1 + " " + m2, ps);
 							newMC.add(temp);						
 						}
 					}
 				}
 								
+				it.remove();
+
 				if (haveMatch) {
-					//Update the source and target component of each super edge
+					//Update the source and target component of each super edge					
+					Iterator<SuperEdge> itc = superEdges.iterator();
+					while (itc.hasNext()) {
+						SuperEdge ti = itc.next();
+						if (ti.sourceComponent.equals(t.sourceComponent))
+							ti.sourceComponent = combinedComponent;
+						if (ti.sourceComponent.equals(t.targetComponent))
+							ti.sourceComponent = combinedComponent;
+						if (ti.targetComponent.equals(t.sourceComponent))
+							ti.targetComponent = combinedComponent;
+						if (ti.targetComponent.equals(t.targetComponent))
+							ti.targetComponent = combinedComponent;							
+					}
+					subResult.remove(t.sourceComponent);
+					subResult.remove(t.targetComponent);
 					
 					//Update the result table
-					
+					subResult.put(combinedComponent, newMC);
 				}
 				else {
 					//It means that there is no valid paths between the two vertices
 					//and thus there is no matching for the query pattern
 					return;
-				}
+				}				
+			}
+		}
+		
+		if (subResult.keySet().size() > 1) {
+			System.out.println("Error");
+		}
+		else {
+			for (Graph i : subResult.keySet()) {
+				LinkedList<MatchedCandidates> matches = subResult.get(i);
+				System.out.println("Total matches: " + matches.size());
+				for (MatchedCandidates mi : matches)
+					mi.Print();
+				System.out.println();				
 			}
 		}
 	}

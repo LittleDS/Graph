@@ -31,6 +31,12 @@ public class NeighborHood2 {
 	HashMap<Integer, HashMap<String, Integer>> ParentHood; 
 	HashMap<Integer, HashMap<String, Integer>> GrandparentHood;
 	
+	public static void main(String[] args) throws IOException {
+		NeighborHood2 nh2 = new NeighborHood2();
+		nh2.Encode("P2P");
+		nh2.OutputToFile("P2PNH2");
+	}
+	
 	/**
 	 * 
 	 * @param g
@@ -112,12 +118,12 @@ public class NeighborHood2 {
 				//For the grand parents
 				for (Integer pi : p) {
 					if (g.parents.containsKey(pi)) {
-						if (GrandparentHood.containsKey(i)) 
+						if (!GrandparentHood.containsKey(i)) 
 							GrandparentHood.put(i, new HashMap<String, Integer>());
 						
 						HashMap<String, Integer> grandlocalInfo = GrandparentHood.get(i);
 						
-						List<Integer> gp = g.children.get(pi);
+						List<Integer> gp = g.parents.get(pi);
 						
 						for (Integer gpi : gp) {
 							String theAttribute = g.primaryAttribute.get(gpi);
@@ -295,5 +301,82 @@ public class NeighborHood2 {
 		}
 		
 		gpScanner.close();
+	}	
+	
+	/**
+	 * Check the containment of neighborhood index
+	 * @param query is the neighborhood of the query pattern
+	 * @param s is the vertex in the query pattern
+	 * @param t is the corresponding matching vertex in the data graph
+	 * @return
+	 */
+	public boolean Check(NeighborHood2 query, Integer s, Integer t) {
+		if (query.ChildHood.containsKey(s)) {
+			HashMap<String, Integer> nhQ = query.ChildHood.get(s);
+			
+			if (!ChildHood.containsKey(t))
+				return false;
+			
+			HashMap<String, Integer> nhD = ChildHood.get(t);
+			
+			//First check the childhood
+			for (String skey : nhQ.keySet())
+				if (!nhD.containsKey(skey))
+					return false;
+				else if (nhD.get(skey) < nhQ.get(skey)) {
+					return false;
+				}
+		}
+		
+		//Second check the parenthood		
+		if (query.ParentHood.containsKey(s)) {
+			HashMap<String, Integer> nhQ = query.ParentHood.get(s);
+			
+			if (!ParentHood.containsKey(t))
+				return false;
+
+			HashMap<String, Integer> nhD = ParentHood.get(t);
+			
+			for (String skey : nhQ.keySet())
+				if (!nhD.containsKey(skey))
+					return false;
+				else if (nhD.get(skey) < nhQ.get(skey)) {
+					return false;
+				}
+		}
+		
+		if (query.GrandchildHood.containsKey(s)) {
+			HashMap<String, Integer> nhQ = query.GrandchildHood.get(s);
+			
+			if (!GrandchildHood.containsKey(t))
+				return false;
+			
+			HashMap<String,  Integer> nhD = GrandchildHood.get(t);
+			
+			for (String skey : nhQ.keySet())
+				if (!nhD.containsKey(skey))
+					return false;
+				else if (nhD.get(skey) < nhQ.get(skey)) {
+					return false;
+				}					
+		}
+		
+		if (query.GrandparentHood.containsKey(s)) {
+			HashMap<String, Integer> nhQ = query.GrandparentHood.get(s);
+			
+			if (!GrandparentHood.containsKey(t))
+				return false;
+
+			HashMap<String, Integer> nhD = GrandparentHood.get(t);
+			
+			for (String skey : nhQ.keySet())
+				if (!nhD.containsKey(skey))
+					return false;
+				else if (nhD.get(skey) < nhQ.get(skey)) {
+					return false;
+				}
+		}
+		
+		return true;
 	}	
 }

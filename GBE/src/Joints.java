@@ -14,7 +14,7 @@ public class Joints {
 	
 	public static void main(String[] args) throws IOException {
 		Joints test = new Joints();
-		test.Encode("P2P");
+		test.Encode("datagraph.txt");
 		System.out.println("Done.");
 	}
 	

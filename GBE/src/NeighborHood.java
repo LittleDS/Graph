@@ -24,6 +24,12 @@ public class NeighborHood {
 //		nh.Encode("datagraph.txt");
 //	}
 
+	public static void main(String[] args) throws IOException {
+		NeighborHood2 nh2 = new NeighborHood2();
+		nh2.Encode("P2P");
+		nh2.OutputToFile("P2PNH1");
+	}
+	
 	Graph g;
 	HashMap<Integer, HashMap<String, Integer>> ChildHood;
 	HashMap<Integer, HashMap<String, Integer>> ParentHood; 
@@ -173,5 +179,50 @@ public class NeighborHood {
 				localInfo.put(slist[i], Integer.parseInt(slist[i + 1]));
 		}
 		pScanner.close();
-	}	
+	}
+
+	/**
+	 * Check the containment of neighborhood index
+	 * @param query is the neighborhood of the query pattern
+	 * @param s is the vertex in the query pattern
+	 * @param t is the corresponding matching vertex in the data graph
+	 * @return
+	 */
+	public boolean Check(NeighborHood query, Integer s, Integer t) {
+		
+		if (query.ChildHood.containsKey(s)) {
+			HashMap<String, Integer> nhQ = query.ChildHood.get(s);
+			
+			if (!ChildHood.containsKey(t))
+				return false;
+			
+			HashMap<String, Integer> nhD = ChildHood.get(t);
+			
+			//First check the childhood
+			for (String skey : nhQ.keySet())
+				if (!nhD.containsKey(skey))
+					return false;
+				else if (nhD.get(skey) < nhQ.get(skey)) {
+					return false;
+				}
+		}
+		
+		//Second check the parenthood		
+		if (query.ParentHood.containsKey(s)) {
+			HashMap<String, Integer> nhQ = query.ParentHood.get(s);
+			
+			if (!ParentHood.containsKey(t))
+				return false;
+
+			HashMap<String, Integer> nhD = ParentHood.get(t);
+			
+			for (String skey : nhQ.keySet())
+				if (!nhD.containsKey(skey))
+					return false;
+				else if (nhD.get(skey) < nhQ.get(skey)) {
+					return false;
+				}
+		}
+		return true;
+	}
 }
