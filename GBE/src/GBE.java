@@ -32,11 +32,11 @@ public class GBE {
 	
 	public static void main(String[] args) throws Exception {
 		GBE test = new GBE();
-		test.jointsIndex.loadEdgeIndexFromFile("datagraph.txtEdges");
-		test.jointsIndex.loadJointIndexFromFile("datagraph.txtJoints");				
+		test.jointsIndex.loadEdgeIndexFromFile("P2PEdges");
+		test.jointsIndex.loadJointIndexFromFile("P2PJoints");				
 		System.out.println("Finish Loading Index....");
 		
-		test.dataGraph.loadGraphFromFile("datagraph.txt");
+		test.dataGraph.loadGraphFromFile("P2P");
 		System.out.println("Finish Loading Data Graph....");
 
 		test.nh.Encode(test.dataGraph);
@@ -44,9 +44,11 @@ public class GBE {
 
 		System.out.println("Start Querying");
 		test.Query("querypattern.txt");
+		System.out.println("Done.");
 	}
 		
 	public void Query(String fileName) throws Exception {
+		long startTime = System.nanoTime();
 		//Divide the query pattern into subgraphs and super edges
 		List<Graph> sG =  DivideGraph(fileName);
 		
@@ -67,8 +69,8 @@ public class GBE {
 //		}
 		
 		//Try to release the memory
-		jointsIndex = null;
-		nh = null;
+//		jointsIndex = null;
+//		nh = null;
 		
 		//Determine the components on each super edge
 		for (SuperEdge se : superEdges) {
@@ -205,9 +207,19 @@ public class GBE {
 				}				
 			}
 		}
+
+		long endTime = System.nanoTime();
+		long duration = endTime - startTime;		
 		
 		if (subResult.keySet().size() > 1) {
 			System.out.println("Error");
+			for (Graph i : subResult.keySet()) {
+				LinkedList<MatchedCandidates> matches = subResult.get(i);
+				System.out.println("Total matches: " + matches.size());
+				for (MatchedCandidates mi : matches)
+					mi.Print();
+				System.out.println();				
+			}			
 		}
 		else {
 			for (Graph i : subResult.keySet()) {
@@ -217,6 +229,7 @@ public class GBE {
 					mi.Print();
 				System.out.println();				
 			}
+			System.out.println("Total running time: " + duration);
 		}
 	}
 	
@@ -253,6 +266,7 @@ public class GBE {
 	 */
 	public List<Graph> DivideGraph(String fileName) throws FileNotFoundException {
 		Graph g = new Graph();
+		superEdges.clear();
 		
 		//Since the format of graph pattern is different from data graph
 		//We still need to load it from file first
@@ -290,8 +304,10 @@ public class GBE {
 			s = neighborLine.split(",");
 			
 			//Initialize the children adjacency list
-			g.children.put(ID, new LinkedList<Integer>());
-			g.parents.put(ID, new LinkedList<Integer>());
+			if (!g.children.containsKey(ID))
+				g.children.put(ID, new LinkedList<Integer>());
+			if (!g.parents.containsKey(ID))
+				g.parents.put(ID, new LinkedList<Integer>());
 			
 			if (s.length > 1) {//If the current vertex has at least one child, the length should be at least 2
 				for (int i = 0; i < s.length; i += 2) {
@@ -319,6 +335,7 @@ public class GBE {
 		
 		//The return result
 		List<Graph> re = new LinkedList<Graph>();
+		visited.clear();
 		
 		//Start from each vertex to floodfill
 		for (Integer i : g.children.keySet()) {

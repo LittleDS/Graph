@@ -17,18 +17,18 @@ public class SubQuery {
 	public static void main(String[] args) throws IOException {		
 
 		Joints j = new Joints();
-		j.loadEdgeIndexFromFile("datagraph.txtEdges");
-		j.loadJointIndexFromFile("datagraph.txtJoints");
+		j.loadEdgeIndexFromFile("P2PEdges");
+		j.loadJointIndexFromFile("P2PJoints");
 				
 		System.out.println("Finish Loading Index....");
 		
 		Graph d = new Graph();
-		d.loadGraphFromFile("datagraph.txt");
+		d.loadGraphFromFile("P2P");
 
 		System.out.println("Finish Loading Data Graph....");
 		
 		Graph t = new Graph();
-		t.loadGraphFromFile("q1.txt");
+		t.loadGraphFromFile("querypattern.txt");
 		
 		System.out.println("Finish Loading Query Pattern....");
 		

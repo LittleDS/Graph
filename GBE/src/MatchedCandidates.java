@@ -66,16 +66,17 @@ public class MatchedCandidates {
 			System.out.println(i + " " + mapping.get(i));
 		}
 		
-		System.out.println("Paths between ");
+		if (paths.keySet().size() > 0) {
+			System.out.println("Paths between ");
+			for (String k : paths.keySet()) {
+				System.out.println(k);
+				for (String l : paths.get(k))
+					System.out.print(l + " ");
+				System.out.println();
+			}			
+		}			
 		
-		for (String k : paths.keySet()) {
-			System.out.println(k);
-			for (String l : paths.get(k))
-				System.out.print(l + " ");
-			System.out.println();
-		}
-		
-		System.out.println();
+		System.out.println("<----------------->");
 	}
 	
 	/**
