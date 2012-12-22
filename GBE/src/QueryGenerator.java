@@ -25,7 +25,7 @@ public class QueryGenerator {
 	}
 	
 	public static void main(String[] args) throws IOException {
-		QueryGenerator test = new QueryGenerator("P2P",5,2);
+		QueryGenerator test = new QueryGenerator("Amazon",5,2);
 		test.generate();
 	}
 	

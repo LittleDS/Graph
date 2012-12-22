@@ -247,12 +247,14 @@ public class GBE {
 				MatchedCandidates ca = it.next();
 				Integer sourceInData = ca.mapping.get(se.source);
 				Integer targetInData = ca.mapping.get(se.target);
-				List<String> pathReturned = BFSBuildShortestPath(sourceInData, targetInData, se.length);
-				if (pathReturned.size() > 0) {
-					ca.paths.put(sourceInData + " " + targetInData, pathReturned);
-				}
-				else {
-					it.remove();
+				if (!sourceInData.equals(targetInData)) {
+					List<String> pathReturned = BFSBuildShortestPath(sourceInData, targetInData, se.length);
+					if (pathReturned.size() > 0) {
+						ca.paths.put(sourceInData + " " + targetInData, pathReturned);
+					}
+					else {
+						it.remove();
+					}
 				}
 			}					
 		}

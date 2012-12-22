@@ -23,7 +23,11 @@ public class MatchedCandidates {
 				if (!list.get(i).equals(mapping.get(ids[i])))
 					return false;
 			}
-		}
+			else {
+				if (mapping.containsValue(list.get(i)))
+					return false;
+			}
+		}				
 		return true;
 	}
 	
