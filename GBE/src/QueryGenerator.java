@@ -25,8 +25,101 @@ public class QueryGenerator {
 	}
 	
 	public static void main(String[] args) throws IOException {
-		QueryGenerator test = new QueryGenerator("Amazon",5,2);
-		test.generate();
+		QueryGenerator test = new QueryGenerator("P2P",8,2);
+		for (int i = 0; i < 50; i++) 
+			test.VSGADDI("query" + i);
+	}
+	
+	/**
+	 * Generate the component for both GBE and GADDI
+	 * @throws IOException 
+	 */
+	public void VSGADDI(String outputFileName) throws IOException {
+		//Pick up the first edge
+		Integer[] start = new Integer[g.children.keySet().size()];
+		g.children.keySet().toArray(start);
+		Random r = new Random();
+		
+		Integer startVertex = null;
+		
+		while (true) {
+			int p = r.nextInt(start.length);
+		
+			startVertex = start[p];
+			
+			if (g.children.containsKey(startVertex) && g.children.get(startVertex).size() > 0) {
+				break;
+			}
+		}
+		
+		//Generate the component starting from a vertex
+		List<Edge> firstComponent = generateComponent(startVertex);
+		
+		//Mapping the IDs to new IDs 0,1,2,...,N - 1
+		HashMap<Integer, List<Integer>> children = new HashMap<Integer, List<Integer>>();
+		
+		HashSet<Integer> vertices = new HashSet<Integer>();
+		
+		for (Edge e : firstComponent) {
+			if (!children.containsKey(e.source))
+				children.put(e.source, new LinkedList<Integer>());
+			children.get(e.source).add(e.target);
+			
+			if (!vertices.contains(e.source))
+				vertices.add(e.source);
+			if (!vertices.contains(e.target))
+				vertices.add(e.target);
+		}
+
+		HashMap<Integer, Integer> IDMap = new HashMap<Integer, Integer>();
+		
+		int st = 0;
+		for (Integer i : vertices) {
+			IDMap.put(i, st++);
+		}
+		
+		FileWriter fstream = new FileWriter(outputFileName + "GBE");
+		BufferedWriter out = new BufferedWriter(fstream);
+		for (Integer i : vertices) {
+			String k = String.valueOf(IDMap.get(i));
+			out.write(k);
+			List<String> as = g.attributes.get(i);
+			for (String s: as)
+				out.write("," + s);
+			out.write("\r\n");
+			
+			String temp = "";
+			if (children.containsKey(i)) {
+				for (Integer j : children.get(i)) {
+					temp += IDMap.get(j) + ",";
+				}
+				//Remove the last comma
+				temp = temp.substring(0, temp.length() - 1);
+			}
+			else
+				temp = "-1";
+			
+			out.write(temp + "\r\n");
+		}
+		out.close();		
+
+		fstream = new FileWriter(outputFileName + "GADDI");
+		out = new BufferedWriter(fstream);
+		out.write(vertices.size() + "\r\n");
+		for (Integer i : vertices) {
+			String k = String.valueOf(IDMap.get(i));
+			out.write(k);
+			String as = g.primaryAttribute.get(i);
+			out.write(" " + as + "\r\n");
+		}
+		for (Integer i : vertices) {
+			if (children.containsKey(i)) {
+				for (Integer j : children.get(i)) {
+					out.write(IDMap.get(i) + " " + IDMap.get(j) + "\r\n");
+				}
+			}
+		}
+		out.close();		
 	}
 	
 	public void generate() throws IOException {
@@ -164,6 +257,8 @@ public class QueryGenerator {
 		int edgeCount = 1;
 		
 		while (edgeCount < sizeofComponent) {
+			if (edgepool.size() == 0)
+				break;
 			//Pick up one edge from edge pool
 			Random rg = new Random();
 			int pos = rg.nextInt(edgepool.size());

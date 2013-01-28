@@ -14,8 +14,8 @@ import java.util.Scanner;
 public class GraphParser {
 	public static void main(String[] args) throws IOException {
 		GraphParser g = new GraphParser();
-		g.Parser("P2P.txt");
-		g.output("P2P");
+		g.Parser("p2p");
+		g.output("p2pparsed");
 		System.out.println("Done.");
 	}
 	

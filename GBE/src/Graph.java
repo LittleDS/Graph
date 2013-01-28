@@ -1,5 +1,8 @@
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -256,5 +259,26 @@ public class Graph implements Comparable<Graph> {
 		outdegree.clear();
 		
 		calculateDegree();		
+	}
+	
+	public void outputGADDIForm(String fileName) throws IOException {
+		//Open the file
+		FileWriter fstream = new FileWriter(fileName);
+		BufferedWriter out = new BufferedWriter(fstream);
+
+		out.write(primaryAttribute.size() + "\r\n");
+
+		//Write the index into file
+		for (Integer i : primaryAttribute.keySet()) {
+				out.write(i + " " + primaryAttribute.get(i) + "\r\n");
+		}
+
+		for (Integer i : children.keySet()) {
+			List<Integer> clist = children.get(i);
+			for (Integer j : clist)
+				out.write(i + " " + j + "\r\n");
+		}
+		//don't forget to close the stream
+		out.close();
 	}
 }

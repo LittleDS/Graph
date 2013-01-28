@@ -1,5 +1,6 @@
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -30,21 +31,38 @@ public class GBE {
 	//Store all the super edges
 	LinkedList<SuperEdge> superEdges = new LinkedList<SuperEdge>();
 	
+	boolean LastTime = false;
+	long TotalTime = 0;
+	
 	public static void main(String[] args) throws Exception {
-		GBE test = new GBE();
-		test.jointsIndex.loadEdgeIndexFromFile("P2PEdges");
-		test.jointsIndex.loadJointIndexFromFile("P2PJoints");				
-		System.out.println("Finish Loading Index....");
-		
-		test.dataGraph.loadGraphFromFile("P2P");
-		System.out.println("Finish Loading Data Graph....");
+//		Graph t = new Graph();
+//		t.loadGraphFromFile("P2P");
+//		t.outputGADDIForm("P2PGADDI");
 
-		test.nh.Encode(test.dataGraph);
-		System.out.println("Finish Building NeighborHood Index");		
-
-		System.out.println("Start Querying");
-		test.Query("querypattern.txt");
-		System.out.println("Done.");
+//		GBE test = new GBE();
+//		String DataFileName = args[0];
+//		String QueryFileName = args[1];
+//		
+//		test.jointsIndex.loadEdgeIndexFromFile(DataFileName + "Edges");
+//		test.jointsIndex.loadJointIndexFromFile(DataFileName + "Joints");				
+//		System.out.println("Finish Loading Index....");
+//		
+//		test.dataGraph.loadGraphFromFile(DataFileName);
+//		System.out.println("Finish Loading Data Graph....");
+//
+//		test.nh.Encode(test.dataGraph);
+//		System.out.println("Finish Building NeighborHood Index");		
+//
+//		System.out.println("Start Querying");
+//		for (int i = 0; i < 100; i++) {
+//			if (i == 99)
+//				test.LastTime = true;
+//			
+//			test.Query(QueryFileName);
+//		}
+//		
+//		System.out.println("Total running time: " + test.TotalTime / 100);		
+//		System.out.println("Done.");
 	}
 		
 	public void Query(String fileName) throws Exception {
@@ -209,27 +227,23 @@ public class GBE {
 		}
 
 		long endTime = System.nanoTime();
-		long duration = endTime - startTime;		
+		long duration = endTime - startTime;	
 		
-		if (subResult.keySet().size() > 1) {
-			System.out.println("Error");
-			for (Graph i : subResult.keySet()) {
-				LinkedList<MatchedCandidates> matches = subResult.get(i);
-				System.out.println("Total matches: " + matches.size());
-				for (MatchedCandidates mi : matches)
-					mi.Print();
-				System.out.println();				
-			}			
-		}
-		else {
-			for (Graph i : subResult.keySet()) {
-				LinkedList<MatchedCandidates> matches = subResult.get(i);
-				System.out.println("Total matches: " + matches.size());
-				for (MatchedCandidates mi : matches)
-					mi.Print();
-				System.out.println();				
+		TotalTime += duration;
+		
+		if (LastTime) {
+			if (subResult.keySet().size() > 1) {
+				System.out.println("Error");			
 			}
-			System.out.println("Total running time: " + duration);
+			else {
+				for (Graph i : subResult.keySet()) {
+					LinkedList<MatchedCandidates> matches = subResult.get(i);
+					System.out.println("Total matches: " + matches.size());
+					for (MatchedCandidates mi : matches)
+						mi.Print();
+					System.out.println();				
+				}
+			}
 		}
 	}
 	
@@ -337,6 +351,8 @@ public class GBE {
 		
 		//The return result
 		List<Graph> re = new LinkedList<Graph>();
+
+		//Since we need to run the experiment, we have to clean the set
 		visited.clear();
 		
 		//Start from each vertex to floodfill
