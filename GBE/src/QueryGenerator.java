@@ -263,42 +263,46 @@ public class QueryGenerator {
 			Random rg = new Random();
 			int pos = rg.nextInt(edgepool.size());
 			Edge choosen = edgepool.get(pos);
-			edgelist.add(choosen);
-			edgepool.remove(pos);
-			
-			//Add all the parents and children in
-			for (Integer i : g.children.get(choosen.target)) {
-				Edge t = new Edge(choosen.target, i);
-				if (!edgepool.contains(t)) {
-					edgepool.add(t);
+
+			if (!edgelist.contains(choosen)) {
+				edgelist.add(choosen);
+				//Add all the parents and children in
+				for (Integer i : g.children.get(choosen.target)) {
+					Edge t = new Edge(choosen.target, i);
+					if (!edgepool.contains(t)) {
+						edgepool.add(t);
+					}
 				}
-			}
-			
-			for (Integer i : g.children.get(choosen.source)) {
-				Edge t = new Edge(choosen.source, i);
-				if (!edgepool.contains(t)) {
-					edgepool.add(t);
-				}			
-			}
-			
-			if (g.parents.containsKey(choosen.target)) {
-				for (Integer i : g.parents.get(choosen.target)) {
-					Edge t = new Edge(i, choosen.target);
+				
+				for (Integer i : g.children.get(choosen.source)) {
+					Edge t = new Edge(choosen.source, i);
 					if (!edgepool.contains(t)) {
 						edgepool.add(t);
 					}			
 				}
+				
+				if (g.parents.containsKey(choosen.target)) {
+					for (Integer i : g.parents.get(choosen.target)) {
+						Edge t = new Edge(i, choosen.target);
+						if (!edgepool.contains(t)) {
+							edgepool.add(t);
+						}			
+					}
+				}
+				
+				if (g.parents.containsKey(choosen.source)) {
+					for (Integer i : g.parents.get(choosen.source)) {
+						Edge t = new Edge(i, choosen.source);
+						if (!edgepool.contains(t)) {
+							edgepool.add(t);
+						}						
+					}
+				}
+				edgeCount++;
 			}
 			
-			if (g.parents.containsKey(choosen.source)) {
-				for (Integer i : g.parents.get(choosen.source)) {
-					Edge t = new Edge(i, choosen.source);
-					if (!edgepool.contains(t)) {
-						edgepool.add(t);
-					}						
-				}
-			}
-			edgeCount++;
+			edgepool.remove(pos);
+			
 		}
 		return edgelist;		
 	}
