@@ -25,7 +25,7 @@ public class QueryGenerator {
 	}
 	
 	public static void main(String[] args) throws IOException {
-		QueryGenerator test = new QueryGenerator("P2P",8,2);
+		QueryGenerator test = new QueryGenerator("Amazon",10,2);
 		for (int i = 0; i < 50; i++) 
 			test.VSGADDI("query" + i);
 	}

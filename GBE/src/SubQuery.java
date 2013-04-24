@@ -17,18 +17,18 @@ public class SubQuery {
 	public static void main(String[] args) throws IOException {		
 
 		Joints j = new Joints();
-		j.loadEdgeIndexFromFile("P2PEdges");
-		j.loadJointIndexFromFile("P2PJoints");
+		j.loadEdgeIndexFromFile("LinkedINEdges");
+		j.loadJointIndexFromFile("LinkedINJoints");
 				
 		System.out.println("Finish Loading Index....");
 		
 		Graph d = new Graph();
-		d.loadGraphFromFile("P2P");
+		d.loadGraphFromFile("LinkedIN");
 
 		System.out.println("Finish Loading Data Graph....");
 		
 		Graph t = new Graph();
-		t.loadGraphFromFile("querypattern.txt");
+		t.loadGraphFromFile("q1.txt");
 		
 		System.out.println("Finish Loading Query Pattern....");
 		
@@ -225,6 +225,28 @@ public class SubQuery {
 		return componentsInOrder;
 	}
 	
+	public boolean isValid(ArrayList<Integer> list, Integer[] ids) {
+		for (int i = 0; i < ids.length - 1; i++) {
+			for (int j = i + 1; j < ids.length; j++) {
+				if (ids[i].equals(ids[j]) && !list.get(i).equals(list.get(j)))
+						return false;
+			}
+		}
+		return true;
+	}
+	
+	
+	public boolean isCycle(Integer[] ids) {
+		for (int i = 0; i < ids.length - 1; i++) {
+			for (int j = i + 1; j < ids.length; j++) {
+				if (ids[i].equals(ids[j]))
+						return true;
+			}
+		}		
+		return false;
+	}
+	
+	
 	/**
 	 * Using the index to query the data graph
 	 * @param components already sorted
@@ -317,15 +339,31 @@ public class SubQuery {
 			//First time, we insert all the candidates into the result set
 			if (result.size() == 0) {
 				Iterator<ArrayList<Integer>> li = lists.iterator();
+				
+				boolean cycleFlag = false;
+				if (isCycle(idsInteger))  
+					cycleFlag = true;
+				
 				while (li.hasNext()) {
-					MatchedCandidates mT = new MatchedCandidates(li.next(), idsInteger);
-					result.add(mT);
+					ArrayList<Integer> tempAList = li.next();
+					if (cycleFlag && isValid(tempAList, idsInteger)) {
+						MatchedCandidates mT = new MatchedCandidates(tempAList, idsInteger);
+						result.add(mT);
+					}
+					else {
+						MatchedCandidates mT = new MatchedCandidates(tempAList, idsInteger);
+						result.add(mT);						
+					}
 				}				
 			}
 			else {
 				//The temp result
 				LinkedList<MatchedCandidates> newResult = new LinkedList<MatchedCandidates>();
 
+				boolean cycleFlag = false;
+				if (isCycle(idsInteger))  
+					cycleFlag = true;
+				
 				//Iterate over all the graph pieces in the result set
 				for (MatchedCandidates m : result) {
 					Iterator<ArrayList<Integer>> li = lists.iterator();
@@ -333,11 +371,21 @@ public class SubQuery {
 					//Iterate over all the components 
 					while (li.hasNext()) {
 						ArrayList<Integer> currentList = li.next();
-						if (m.CanJoin(currentList, idsInteger)) {
-							//Make a copy of the current graph piece
-							MatchedCandidates mT = new MatchedCandidates(m);
-							mT.Join(currentList,  idsInteger);
-							newResult.add(mT);
+						if (cycleFlag && isValid(currentList, idsInteger)) {
+							if (m.CanJoin(currentList, idsInteger)) {
+								//Make a copy of the current graph piece
+								MatchedCandidates mT = new MatchedCandidates(m);
+								mT.Join(currentList,  idsInteger);
+								newResult.add(mT);
+							}
+						}
+						else {
+							if (m.CanJoin(currentList, idsInteger)) {
+								//Make a copy of the current graph piece
+								MatchedCandidates mT = new MatchedCandidates(m);
+								mT.Join(currentList,  idsInteger);
+								newResult.add(mT);
+							}								
 						}
 					}
 					
