@@ -13,9 +13,11 @@ public class Joints {
 	Graph graph;
 	
 	public static void main(String[] args) throws IOException {
-		Joints test = new Joints();
-		test.Encode("P2P");
-		System.out.println("Done.");
+//		for (int i = 1; i <= 10; i++) {
+			Joints test = new Joints();
+			test.Encode("LinkedIN");
+			System.out.println("Done.");			
+//		}
 	}
 	
 	public void Encode(String fileName) throws IOException {
