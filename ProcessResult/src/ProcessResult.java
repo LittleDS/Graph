@@ -11,16 +11,26 @@ public class ProcessResult {
 	 */
 	public static void main(String[] args) throws FileNotFoundException {
 		// TODO Auto-generated method stub
-		File in = new File("results.txt");
+		File in = new File("result10.txt");
 		Scanner sc = new Scanner(in);
-		int i = 0;
+
 		while (sc.hasNext()) {
 			String currentLine = sc.nextLine();
-			if (currentLine.contains("ns")) {
-				System.out.println(i++ + " " + currentLine);
+
+			if (currentLine.contains("Total Component Query time:")) {
+				String[] s = currentLine.split(" ");
+				System.out.print(s[4]);
 			}
-		}
-		sc.close();
+			else if (currentLine.contains("Total Path Building time:")) {
+				String[] s = currentLine.split(" ");
+				System.out.print("\t" + Long.parseLong(s[4]));				
+			}
+			else if (currentLine.contains("Total running time:")) {
+				String[] s = currentLine.split(" ");
+				System.out.println("\t" + Long.parseLong(s[3]));				
+			}
+		}		
+		sc.close();		
 	}
 
 }
