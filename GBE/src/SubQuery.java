@@ -17,18 +17,18 @@ public class SubQuery {
 	public static void main(String[] args) throws IOException {		
 		
 		Joints j = new Joints();
-		j.loadEdgeIndexFromFile("LinkedINEdges");
-		j.loadJointIndexFromFile("LinkedINJoints");
+		j.loadEdgeIndexFromFile("AmazonEdges");
+		j.loadJointIndexFromFile("AmazonJoints");
 				
 		System.out.println("Finish Loading Index....");
 		
 		Graph d = new Graph();
-		d.loadGraphFromFile("LinkedIN");
+		d.loadGraphFromFile("Amazon");
 
 		System.out.println("Finish Loading Data Graph....");
 		
 		Graph t = new Graph();
-		t.loadGraphFromFile("q1.txt");
+		t.loadGraphFromFile("query5GBE");
 		
 		System.out.println("Finish Loading Query Pattern....");
 		
@@ -45,11 +45,14 @@ public class SubQuery {
 		System.out.println("Start Query Matching...");
 		
 		long startTime = System.nanoTime();
-		HashMap<Graph, LinkedList<MatchedCandidates>> result = sq.Execute();
+		HashMap<Graph, LinkedList<MatchedCandidates>> result = null;
+		for (int i = 0; i < 50; i++) { 
+			result = sq.Execute();
+		}
 		long endTime = System.nanoTime();
 		long duration = endTime - startTime;
 				
-		System.out.println(duration + " nanosecond");
+		System.out.println(duration / 50 + " nanosecond");
 		for (Graph i : result.keySet()) {
 			i.print();
 			System.out.println("Total Matches: " + result.get(i).size());
@@ -84,7 +87,9 @@ public class SubQuery {
 		HashMap<Graph, LinkedList<MatchedCandidates>> r = new HashMap<Graph, LinkedList<MatchedCandidates>>();
 		
 		for (Graph g : subGraphs) {
-			LinkedList<MatchedCandidates> gr = Query(SortComponents(Divide(g)), g);
+			//LinkedList<MatchedCandidates> gr = Query(SortComponents(Divide(g)), g);
+			LinkedList<MatchedCandidates> gr = Query(SortComponentsOptimized(Divide(g)), g);
+			
 			//If any component doesn't have match, the algorithm is terminated
 			if (gr.size() > 0)				
 				r.put(g, gr);
@@ -127,13 +132,8 @@ public class SubQuery {
 				
 				for (Integer p : parentsList) {
 					for (Integer c : childrenList) {
-						
-						//Get the attributes
-						String j1 = g.primaryAttribute.get(p);
-						String j2 = g.primaryAttribute.get(i);
-						String j3 = g.primaryAttribute.get(c);
-						
-						List<Integer> triples = index.jointsIndex.get(j1).get(j2).get(j3);
+										
+						List<Integer> triples = index.jointsIndex.get(g.primaryAttribute.get(p)).get(g.primaryAttribute.get(i)).get(g.primaryAttribute.get(c));
 												
 						if (triples != null && triples.size() < min) {
 							min = triples.size();
@@ -162,6 +162,7 @@ public class SubQuery {
 				g.parents.get(jointCore).remove(jointParent);
 				g.parents.get(jointChild).remove(jointCore);								
 			}
+			
 			if (!updated)
 				break;
 		}
@@ -229,9 +230,50 @@ public class SubQuery {
 				
 			}
 		}
+		
 		return componentsInOrder;
 	}
 	
+	/**
+	 * Try to optimize the join order
+	 * @param components
+	 * @return
+	 */
+	public List<ArrayList<Integer>> SortComponentsOptimized(List<ArrayList<Integer>> components) {
+		List<ArrayList<Integer>> componentsInOrder = new LinkedList<ArrayList<Integer>>();		
+		
+		if (components.size() == 0)
+			return componentsInOrder;
+
+		componentsInOrder.add(components.get(0));
+		components.remove(0);
+		
+		HashSet<Integer> used = new HashSet<Integer>();
+		
+		used.addAll(componentsInOrder.get(0));
+		
+		while (components.size() > 0) {
+			
+			for (int j = 0; j < components.size(); j++) {
+				boolean hasjoin = false;
+				ArrayList<Integer> ids1 = components.get(j);
+				for (Integer k : ids1) {
+					if (used.contains(k)) {
+						hasjoin = true;
+						break;
+					}
+				}
+				if (hasjoin) {
+					componentsInOrder.add(ids1);
+					components.remove(j);
+					used.addAll(ids1);
+					break;
+				}				
+			}			
+		}
+		
+		return componentsInOrder;
+	}
 	/**
 	 * If the joint is a cycle, the corresponding matching must be also a cycle
 	 * @param list
