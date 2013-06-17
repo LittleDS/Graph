@@ -33,7 +33,7 @@ public class GBE {
 	boolean LastTime = false;
 	long TotalTime = 0;
 	
-	public static void main(String[] args) throws Exception {
+//	public static void main(String[] args) throws Exception {
 //		Graph t = new Graph();
 //		t.loadGraphFromFile("P2P");
 //		t.outputGADDIForm("P2PGADDI");
@@ -62,7 +62,7 @@ public class GBE {
 //		
 //		System.out.println("Total running time: " + test.TotalTime / 100);		
 //		System.out.println("Done.");
-	}
+//	}
 		
 	public void Query(String fileName) throws Exception {
 		long startTime = System.nanoTime();
@@ -85,10 +85,6 @@ public class GBE {
 //			System.out.println();
 //		}
 		
-		//Try to release the memory
-//		jointsIndex = null;
-//		nh = null;
-		
 		//Determine the components on each super edge
 		for (SuperEdge se : superEdges) {
 			//Currently use this two marker to check errors
@@ -96,7 +92,7 @@ public class GBE {
 			boolean targetComponentAssigned = false;
 			
 			for (Graph g : sG) {
-				if (g.attributes.containsKey(se.source)) {
+				if (g.primaryAttribute.containsKey(se.source)) {
 					if (!sourceComponentAssigned) {
 						sourceComponentAssigned = true;
 						se.sourceComponent = g;
@@ -105,7 +101,7 @@ public class GBE {
 						System.out.println("Error!");
 				}
 				
-				if (g.attributes.containsKey(se.target)) {
+				if (g.primaryAttribute.containsKey(se.target)) {
 					if (!targetComponentAssigned) {
 						targetComponentAssigned = true;
 						se.targetComponent = g;
@@ -298,20 +294,9 @@ public class GBE {
 			//Parse the ID first
 			Integer ID = Integer.parseInt(s[0]);
 			
-			//Initialize the attributes list
-			g.attributes.put(ID, new LinkedList<String>());
-			
-			//Insert all the attributes
-			for (int i = 1; i < s.length; i++)
-				g.attributes.get(ID).add(s[i]);
-			
-			//Set the primary attribute
-			if (s.length > 1) {
-				g.primaryAttribute.put(ID, s[1]);
-			}
-			else
-				g.primaryAttribute.put(ID, s[0]);
-			
+			//Initialize the primary attribute
+			g.primaryAttribute.put(ID, s[1]);
+								
 			//Process the neighbors
 			String neighborLine = sc.nextLine();
 			
@@ -384,7 +369,7 @@ public class GBE {
 		
 		//Visit every child
 		for (Integer i : g.children.get(source)) {
-			re.addEdge(source, g.attributes.get(source), i, g.attributes.get(i));
+			re.addEdge(source, g.primaryAttribute.get(source), i, g.primaryAttribute.get(i));
 			if (!visited.contains(i)) {				
 				//DFS
 				FloodFill(i, re, g);
@@ -393,7 +378,7 @@ public class GBE {
 
 		//Visit every parent
 		for (Integer i : g.parents.get(source)) {
-			re.addEdge(i, g.attributes.get(i), source, g.attributes.get(source));
+			re.addEdge(i, g.primaryAttribute.get(i), source, g.primaryAttribute.get(source));
 			if (!visited.contains(i)){				
 				FloodFill(i, re, g);				
 			}			

@@ -3,7 +3,7 @@ import java.util.HashMap;
 import java.util.List;
 
 /**
- * Actually this class is used to describe the structure of a temporary result during subgraph querying
+ * This class is used to describe the structure of a temporary result during subgraph querying
  * @author Administrator
  *
  */
@@ -17,10 +17,10 @@ public class MatchedCandidates {
 	 * @param ids
 	 * @return
 	 */
-	public boolean CanJoin(ArrayList<Integer> list, Integer[] ids) {
-		for (int i = 0; i < ids.length; i++) {
-			if (mapping.containsKey(ids[i])) {
-				if (!list.get(i).equals(mapping.get(ids[i])))
+	public boolean CanJoin(ArrayList<Integer> list, ArrayList<Integer> ids) {
+		for (int i = 0; i < ids.size(); i++) {
+			if (mapping.containsKey(ids.get(i))) {
+				if (!list.get(i).equals(mapping.get(ids.get(i))))
 					return false;
 			}
 			else {
@@ -34,24 +34,24 @@ public class MatchedCandidates {
 	/**
 	 * Join a component with the graph piece
 	 * @param list
-	 * @param ids
+	 * @param s
 	 */
-	public void Join(ArrayList<Integer> list, Integer[] ids) {
-		for (int i = 0; i < ids.length; i++) {
-			if (!mapping.containsKey(ids[i])) {
-				mapping.put(ids[i], list.get(i));
+	public void Join(ArrayList<Integer> list, ArrayList<Integer> s) {
+		for (int i = 0; i < s.size(); i++) {
+			if (!mapping.containsKey(s.get(i))) {
+				mapping.put(s.get(i), list.get(i));
 			}
 		}
 	}
 	
 	/**
-	 * The constructor
+	 * The default constructor
 	 * @param list
-	 * @param ids
+	 * @param s
 	 */
-	public MatchedCandidates(ArrayList<Integer> list, Integer[] ids) {
-		for (int i = 0; i < ids.length; i++) {
-			mapping.put(ids[i], list.get(i));
+	public MatchedCandidates(ArrayList<Integer> list, ArrayList<Integer> s) {
+		for (int i = 0; i < s.size(); i++) {
+			mapping.put(s.get(i), list.get(i));
 		}
 	}
 
@@ -60,11 +60,31 @@ public class MatchedCandidates {
 	 * @param another
 	 */
 	public MatchedCandidates(MatchedCandidates another) {
-		for (Integer i : another.mapping.keySet()) {
-			mapping.put(i, another.mapping.get(i));
+		mapping.putAll(another.mapping);
+	}
+	
+
+	/**
+	 * Combine the two matching candidates
+	 * @param another
+	 * @throws Exception 
+	 */
+	public void Combine(MatchedCandidates another) throws Exception {
+		for (Integer k : another.mapping.keySet()) {
+			if (!this.mapping.containsKey(k))
+				this.mapping.put(k, another.mapping.get(k));
+			else
+				throw new Exception("Duplicate Keys");
+		}
+		
+		for (String k : another.paths.keySet()) {
+			this.paths.put(k, another.paths.get(k));
 		}
 	}
 	
+	/**
+	 * Print the matching result
+	 */
 	public void Print() {
 		for (Integer i: mapping.keySet()) {
 			System.out.println(i + " " + mapping.get(i));
@@ -80,20 +100,7 @@ public class MatchedCandidates {
 			}			
 		}			
 		
-		System.out.println("<----------------->");
+		System.out.println("~~~~~~~~~~~~~~~");
 	}
 	
-	/**
-	 * Combine the two matching candidates
-	 * @param another
-	 */
-	public void Combine(MatchedCandidates another) {
-		for (Integer k : another.mapping.keySet()) {
-			this.mapping.put(k, another.mapping.get(k));
-		}
-		
-		for (String k : another.paths.keySet()) {
-			this.paths.put(k, another.paths.get(k));
-		}
-	}
 }

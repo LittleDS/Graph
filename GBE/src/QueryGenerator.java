@@ -83,9 +83,8 @@ public class QueryGenerator {
 		for (Integer i : vertices) {
 			String k = String.valueOf(IDMap.get(i));
 			out.write(k);
-			List<String> as = g.attributes.get(i);
-			for (String s: as)
-				out.write("," + s);
+			String as = g.primaryAttribute.get(i);
+			out.write("," + as);
 			out.write("\r\n");
 			
 			String temp = "";
@@ -178,9 +177,8 @@ public class QueryGenerator {
 			String k = String.valueOf(i);
 			System.out.println(k);
 			out.write(k);
-			List<String> as = g.attributes.get(i);
-			for (String s: as)
-				out.write("," + s);
+			String as = g.primaryAttribute.get(i);
+			out.write("," + as);
 			out.write("\r\n");
 			
 			String temp = "";

@@ -15,7 +15,7 @@ public class SubQuery {
 	NeighborHood nhindex;
 	
 	public static void main(String[] args) throws IOException {		
-
+		
 		Joints j = new Joints();
 		j.loadEdgeIndexFromFile("LinkedINEdges");
 		j.loadJointIndexFromFile("LinkedINJoints");
@@ -39,8 +39,7 @@ public class SubQuery {
 		
 		List<Graph> listGraph = new LinkedList<Graph>();
 		listGraph.add(t);
-						
-		
+								
 		SubQuery sq = new SubQuery(d, listGraph, j, n);		
 		
 		System.out.println("Start Query Matching...");
@@ -57,7 +56,6 @@ public class SubQuery {
 			
 			for (MatchedCandidates c : result.get(i)) {
 				c.Print();
-				System.out.println("~~~~~~~~~~~~~~~");
 			}
 			
 			System.out.println("<--------------->");
@@ -82,7 +80,9 @@ public class SubQuery {
 	 * @return
 	 */
 	public HashMap<Graph, LinkedList<MatchedCandidates>> Execute() {
+		
 		HashMap<Graph, LinkedList<MatchedCandidates>> r = new HashMap<Graph, LinkedList<MatchedCandidates>>();
+		
 		for (Graph g : subGraphs) {
 			LinkedList<MatchedCandidates> gr = Query(SortComponents(Divide(g)), g);
 			//If any component doesn't have match, the algorithm is terminated
@@ -101,12 +101,12 @@ public class SubQuery {
 	 * @param g
 	 * @return
 	 */
-	public List<String> Divide(Graph input) {
-		List<String> result = new LinkedList<String>();
+	public List<ArrayList<Integer>> Divide(Graph input) {
+		List<ArrayList<Integer>> result = new LinkedList<ArrayList<Integer>>();
 				
 		//First determine those vertices with both indegree and outdegree
 		HashSet<Integer> cand = new HashSet<Integer>();		
-		for (Integer i : input.attributes.keySet()) {
+		for (Integer i : input.primaryAttribute.keySet()) {
 			if (input.outdegree.containsKey(i) && input.indegree.containsKey(i) 
 			 && input.outdegree.get(i) > 0 && input.indegree.get(i) > 0) {
 				cand.add(i);
@@ -151,12 +151,16 @@ public class SubQuery {
 			
 			if (min != Integer.MAX_VALUE && jointParent != -1) {
 				updated = true;
-				result.add(jointParent + "," + jointCore + "," + jointChild);
+				ArrayList<Integer> ti = new ArrayList<Integer>(3);
+				ti.add(jointParent);
+				ti.add(jointCore);
+				ti.add(jointChild);
+				result.add(ti);
+				
 				g.children.get(jointCore).remove(jointChild);
 				g.children.get(jointParent).remove(jointCore);
 				g.parents.get(jointCore).remove(jointParent);
-				g.parents.get(jointChild).remove(jointCore);				
-				
+				g.parents.get(jointChild).remove(jointCore);								
 			}
 			if (!updated)
 				break;
@@ -166,7 +170,10 @@ public class SubQuery {
 			List<Integer> childrenList = g.children.get(i);
 			if (childrenList.size() > 0) {
 				for (Integer j : childrenList) {
-					result.add(i + "," + j);
+					ArrayList<Integer> ti = new ArrayList<Integer>(2);
+					ti.add(i);
+					ti.add(j);			
+					result.add(ti);
 				}
 			}
 		}
@@ -179,10 +186,10 @@ public class SubQuery {
 	 * @param components
 	 * @return
 	 */
-	public List<String> SortComponents(List<String> components) {
+	public List<ArrayList<Integer>> SortComponents(List<ArrayList<Integer>> components) {
 		//We need to determine an order of those components first
 		//Because we have to make sure the next component has at least one intersection with the previous components
-		List<String> componentsInOrder = new LinkedList<String>();		
+		List<ArrayList<Integer>> componentsInOrder = new LinkedList<ArrayList<Integer>>();		
 		
 		if (components.size() == 0)
 			return componentsInOrder;
@@ -196,14 +203,14 @@ public class SubQuery {
 			boolean match = false;
 			
 			for (int i = 0; i < componentsInOrder.size(); i++) {
-				String[] ids1 = componentsInOrder.get(i).split(",");
+				ArrayList<Integer> ids1 = componentsInOrder.get(i);
 				
 				for (int j = 0; j < components.size(); j++) {
-					String[] ids2 = components.get(j).split(",");
+					ArrayList<Integer> ids2 = components.get(j);
 				
-					for (int k = 0; k < ids1.length; k++)
-						for (int l = 0; l < ids2.length; l++) {
-							if (ids1[k].equals(ids2[l])) {
+					for (int k = 0; k < ids1.size(); k++)
+						for (int l = 0; l < ids2.size(); l++) {
+							if (ids1.get(k).equals(ids2.get(l))) {
 								match = true;								
 								break;
 							}
@@ -225,10 +232,16 @@ public class SubQuery {
 		return componentsInOrder;
 	}
 	
-	public boolean isValid(ArrayList<Integer> list, Integer[] ids) {
-		for (int i = 0; i < ids.length - 1; i++) {
-			for (int j = i + 1; j < ids.length; j++) {
-				if (ids[i].equals(ids[j]) && !list.get(i).equals(list.get(j)))
+	/**
+	 * If the joint is a cycle, the corresponding matching must be also a cycle
+	 * @param list
+	 * @param ids
+	 * @return
+	 */
+	public boolean isValid(ArrayList<Integer> list, ArrayList<Integer> ids) {
+		for (int i = 0; i < ids.size() - 1; i++) {
+			for (int j = i + 1; j < ids.size(); j++) {
+				if (ids.get(i).equals(ids.get(i)) && !list.get(i).equals(list.get(j)))
 						return false;
 			}
 		}
@@ -236,24 +249,28 @@ public class SubQuery {
 	}
 	
 	
-	public boolean isCycle(Integer[] ids) {
-		for (int i = 0; i < ids.length - 1; i++) {
-			for (int j = i + 1; j < ids.length; j++) {
-				if (ids[i].equals(ids[j]))
+	/**
+	 * Determine whether a joint is a cycle
+	 * @param ids
+	 * @return
+	 */
+	public boolean isCycle(ArrayList<Integer> ids) {
+		for (int i = 0; i < ids.size() - 1; i++) {
+			for (int j = i + 1; j < ids.size(); j++) {
+				if (ids.get(i).equals(ids.get(j)))
 						return true;
 			}
 		}		
 		return false;
 	}
-	
-	
+		
 	/**
 	 * Using the index to query the data graph
 	 * @param components already sorted
 	 * @param subGraph
 	 * @return
 	 */
-	public LinkedList<MatchedCandidates> Query(List<String> components, Graph subGraph) {
+	public LinkedList<MatchedCandidates> Query(List<ArrayList<Integer>> components, Graph subGraph) {
 		//The result to be returned
 		LinkedList<MatchedCandidates> result = new LinkedList<MatchedCandidates>();
 		
@@ -261,21 +278,16 @@ public class SubQuery {
 		NeighborHood localnh = new NeighborHood();
 		localnh.Encode(subGraph);
 		
-		for (String s : components) {
-			String[] ids = s.split(",");			
+		for (ArrayList<Integer> s : components) {			
 
-			Integer[] idsInteger = new Integer[ids.length];
-			String[] attributeString = new String[ids.length];
-			
-			for (int i = 0; i < ids.length; i++) {
-				idsInteger[i] = Integer.parseInt(ids[i]);
-				attributeString[i] = subGraph.primaryAttribute.get(idsInteger[i]);
-			}
-			
-			
+			String[] attributeString = new String[s.size()];
+
+			for (int i = 0; i < s.size(); i++)
+				attributeString[i] = subGraph.primaryAttribute.get(s.get(i));
+							
 			LinkedList<ArrayList<Integer>> lists = new LinkedList<ArrayList<Integer>>();
 			
-			if (ids.length == 3) {//Joint				
+			if (s.size() == 3) {//Joint				
 				//All the triples that match the attributes
 				List<Integer> triples = index.jointsIndex.get(attributeString[0]).get(attributeString[1]).get(attributeString[2]);
 				
@@ -292,9 +304,9 @@ public class SubQuery {
 					
 					boolean flag = true;
 					
-					for (int i = 0; i < ids.length; i++) {
+					for (int i = 0; i < s.size(); i++) {
 						//The neighborhood of query pattern
-						if (!nhindex.Check(localnh, idsInteger[i], tArrayList.get(i))) {
+						if (!nhindex.Check(localnh, s.get(i), tArrayList.get(i))) {
 							flag = false;
 							break;						
 						}					
@@ -318,8 +330,8 @@ public class SubQuery {
 
 					boolean flag = true;
 
-					for (int i = 0; i < ids.length; i++) {
-						if (!nhindex.Check(localnh, idsInteger[i], tArrayList.get(i))) {
+					for (int i = 0; i < s.size(); i++) {
+						if (!nhindex.Check(localnh, s.get(i), tArrayList.get(i))) {
 							flag = false;
 							break;						
 						}											
@@ -341,17 +353,17 @@ public class SubQuery {
 				Iterator<ArrayList<Integer>> li = lists.iterator();
 				
 				boolean cycleFlag = false;
-				if (isCycle(idsInteger))  
+				if (isCycle(s))  
 					cycleFlag = true;
 				
 				while (li.hasNext()) {
 					ArrayList<Integer> tempAList = li.next();
-					if (cycleFlag && isValid(tempAList, idsInteger)) {
-						MatchedCandidates mT = new MatchedCandidates(tempAList, idsInteger);
+					if (cycleFlag && isValid(tempAList, s)) {
+						MatchedCandidates mT = new MatchedCandidates(tempAList, s);
 						result.add(mT);
 					}
 					else {
-						MatchedCandidates mT = new MatchedCandidates(tempAList, idsInteger);
+						MatchedCandidates mT = new MatchedCandidates(tempAList, s);
 						result.add(mT);						
 					}
 				}				
@@ -361,7 +373,7 @@ public class SubQuery {
 				LinkedList<MatchedCandidates> newResult = new LinkedList<MatchedCandidates>();
 
 				boolean cycleFlag = false;
-				if (isCycle(idsInteger))  
+				if (isCycle(s))  
 					cycleFlag = true;
 				
 				//Iterate over all the graph pieces in the result set
@@ -371,19 +383,19 @@ public class SubQuery {
 					//Iterate over all the components 
 					while (li.hasNext()) {
 						ArrayList<Integer> currentList = li.next();
-						if (cycleFlag && isValid(currentList, idsInteger)) {
-							if (m.CanJoin(currentList, idsInteger)) {
+						if (cycleFlag && isValid(currentList, s)) {
+							if (m.CanJoin(currentList, s)) {
 								//Make a copy of the current graph piece
 								MatchedCandidates mT = new MatchedCandidates(m);
-								mT.Join(currentList,  idsInteger);
+								mT.Join(currentList, s);
 								newResult.add(mT);
 							}
 						}
 						else {
-							if (m.CanJoin(currentList, idsInteger)) {
+							if (m.CanJoin(currentList, s)) {
 								//Make a copy of the current graph piece
 								MatchedCandidates mT = new MatchedCandidates(m);
-								mT.Join(currentList,  idsInteger);
+								mT.Join(currentList, s);
 								newResult.add(mT);
 							}								
 						}

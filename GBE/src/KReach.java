@@ -164,7 +164,7 @@ public class KReach {
 		//First calculate the degree of each vertex
 		HashMap<Integer, Integer> degree = new HashMap<Integer, Integer>();
 
-		for (Integer i: graph.attributes.keySet()) {
+		for (Integer i: graph.primaryAttribute.keySet()) {
 			int t = 0;
 			if (graph.children.containsKey(i))
 				t += graph.children.get(i).size();
@@ -285,7 +285,7 @@ public class KReach {
 			
 			//The total number of vertices is equal to the size of the attributes map
 			//Because each vertex must have at least one attribute entry
-			boolean[] firstVisit = new boolean[graph.attributes.keySet().size()];
+			boolean[] firstVisit = new boolean[graph.primaryAttribute.keySet().size()];
 			//The first time we visit a node, we mark it
 			firstVisit[startNode.vertex] = true;				
 			

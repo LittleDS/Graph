@@ -45,15 +45,15 @@ public class GRAIL {
 		
 		//There is a chance that every vertex has incoming edge, so there is no root
 		if (roots.size() == 0) {
-			Integer[] l = new Integer[graph.attributes.keySet().size()];
-			graph.attributes.keySet().toArray(l);
+			Integer[] l = new Integer[graph.primaryAttribute.keySet().size()];
+			graph.primaryAttribute.keySet().toArray(l);
 			
 			//Add the first element as the root
 			roots.add(l[0]);
 		}
 				
 		//Initialize the final result
-		for (Integer j : graph.attributes.keySet())
+		for (Integer j : graph.primaryAttribute.keySet())
 			intervalLabel.put(j, new LinkedList<Integer>());
 				
 		//Use DFS to label the graph
@@ -140,7 +140,7 @@ public class GRAIL {
 				}
 			}
 			
-			for (Integer j : graph.attributes.keySet()) {
+			for (Integer j : graph.primaryAttribute.keySet()) {
 				intervalLabel.get(j).add(lowestOrder.get(j));
 				intervalLabel.get(j).add(postOrder.get(j));
 			}

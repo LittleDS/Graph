@@ -10,8 +10,7 @@ import java.util.Scanner;
 
 
 public class Graph implements Comparable<Graph> {
-	//Since the attributes of each vertex don't have any contribution to the labeling, we can split them into a separate structure
-	public HashMap<Integer, List<String>> attributes = new HashMap<Integer, List<String>>();
+	//We require that each vertex only has one label in this work
 	public HashMap<Integer, String> primaryAttribute = new HashMap<Integer, String>();
 	
 	//The adjacency list of each vertex
@@ -20,9 +19,6 @@ public class Graph implements Comparable<Graph> {
 	
 	//The value will be set after loading the graph
 	public int totalEdges = 0;
-
-	//The position of the primary attribute, by default it's set to 1
-	public int primaryPosition = 1;
 	
 	public boolean graphLoaded = false;
 
@@ -54,18 +50,9 @@ public class Graph implements Comparable<Graph> {
 			//Process the ID and the attributes
 			String[] strings = idLine.split(",");
 			int ID = Integer.parseInt(strings[0]);
-			attributes.put(ID, new LinkedList<String>());
 
-			if (strings.length > 1)
-				primaryAttribute.put(ID, strings[primaryPosition]);
-			else
-				primaryAttribute.put(ID, strings[0]);
-			
-			//The first element is the vertex ID, we start from the second one
-			for (int i = 1; i < strings.length; i++) {
-				attributes.get(ID).add(strings[i]);
-			}
-			
+			primaryAttribute.put(ID, strings[1]);
+						
 			//Process the neighbors
 			strings = neighborLine.split(",");
 			if (!children.containsKey(ID))
@@ -95,26 +82,18 @@ public class Graph implements Comparable<Graph> {
 	
 	/**
 	 * Add an edge to the graph
-	 * 
 	 */
-	public void addEdge(Integer s, List<String> aS, Integer t, List<String> aT) {
-	
-		if (!attributes.containsKey(s)) {
-			attributes.put(s, aS);
-			if (primaryPosition > 0)
-				primaryAttribute.put(s, aS.get(primaryPosition - 1));
-			else
-				primaryAttribute.put(s, String.valueOf(s));
+	public void addEdge(Integer s, String aS, Integer t, String aT) {
+		//Check whether the verex has already been in the graph
+		if (primaryAttribute.containsKey(s)) {
+			primaryAttribute.put(s, aS);
 		}
 		
-		if (!attributes.containsKey(t)) {
-			attributes.put(t, aT);
-			if (primaryPosition > 0)
-				primaryAttribute.put(t, aT.get(primaryPosition - 1));
-			else
-				primaryAttribute.put(t, String.valueOf(t));
+		if (primaryAttribute.containsKey(t)) {
+			primaryAttribute.put(t, aT);
 		}
 		
+		//Add t as a child of s
 		if (!children.containsKey(s))
 			children.put(s, new LinkedList<Integer>());
 		
@@ -123,7 +102,7 @@ public class Graph implements Comparable<Graph> {
 			totalEdges++;
 		}
 		
-		
+		//In the meanwhile, add s as a parent of t
 		if (!parents.containsKey(t))
 			parents.put(t,  new LinkedList<Integer>());
 		if (!parents.get(t).contains(s))
@@ -138,6 +117,7 @@ public class Graph implements Comparable<Graph> {
 		for (Integer i : children.keySet()) {
 			outdegree.put(i, children.get(i).size());
 		}
+		
 		indegree.clear();
 		for (Integer i : parents.keySet()) {
 			indegree.put(i, parents.get(i).size());			
@@ -171,12 +151,7 @@ public class Graph implements Comparable<Graph> {
 	 */
 	public Graph(Graph another) {
 		//Attributes
-		for (Integer i : another.attributes.keySet()) {
-			attributes.put(i, new LinkedList<String>());
-			for (String s : another.attributes.get(i)) {
-				attributes.get(i).add(s);
-			}
-		}
+		this.primaryAttribute.putAll(another.primaryAttribute);
 		
 		//Primary Attribute
 		for (Integer i : another.primaryAttribute.keySet()) {
@@ -208,7 +183,6 @@ public class Graph implements Comparable<Graph> {
 
 	@Override
 	public int compareTo(Graph arg0) {
-		// TODO Auto-generated method stub
 		if (this.totalEdges > arg0.totalEdges)
 			return -1;
 		else if (this.totalEdges < arg0.totalEdges)
@@ -223,15 +197,8 @@ public class Graph implements Comparable<Graph> {
 	 * @param another
 	 */
 	public void Combine(Graph another) {
-		//Attributes
-		for (Integer i : another.attributes.keySet()) {
-			attributes.put(i, new LinkedList<String>());
-			for (String s : another.attributes.get(i)) {
-				attributes.get(i).add(s);
-			}
-		}
-		
 		//Primary Attribute
+		//This two graphs shouldn't share any common vertices
 		for (Integer i : another.primaryAttribute.keySet()) {
 			primaryAttribute.put(i, another.primaryAttribute.get(i));
 		}
