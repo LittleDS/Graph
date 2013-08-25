@@ -34,10 +34,7 @@ public class GBE {
 	long TotalTime = 0;
 	
 //	public static void main(String[] args) throws Exception {
-//		Graph t = new Graph();
-//		t.loadGraphFromFile("P2P");
-//		t.outputGADDIForm("P2PGADDI");
-
+//
 //		GBE test = new GBE();
 //		String DataFileName = args[0];
 //		String QueryFileName = args[1];
