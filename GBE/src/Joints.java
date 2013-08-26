@@ -15,7 +15,7 @@ public class Joints {
 	public static void main(String[] args) throws IOException {
 //		for (int i = 1; i <= 10; i++) {
 			Joints test = new Joints();
-			test.Encode("LinkedIN");
+			test.Encode("VariousE4GBE");
 			System.out.println("Done.");			
 //		}
 	}

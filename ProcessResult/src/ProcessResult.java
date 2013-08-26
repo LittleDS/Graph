@@ -16,19 +16,23 @@ public class ProcessResult {
 
 		while (sc.hasNext()) {
 			String currentLine = sc.nextLine();
+			if (currentLine.contains("nanosecond")) {
+				String[] s = currentLine.split(" ");
+				System.out.println(s[0]);
+			}
 
-			if (currentLine.contains("Total Component Query time:")) {
-				String[] s = currentLine.split(" ");
-				System.out.print(s[4]);
-			}
-			else if (currentLine.contains("Total Path Building time:")) {
-				String[] s = currentLine.split(" ");
-				System.out.print("\t" + Long.parseLong(s[4]));				
-			}
-			else if (currentLine.contains("Total running time:")) {
-				String[] s = currentLine.split(" ");
-				System.out.println("\t" + Long.parseLong(s[3]));				
-			}
+//			if (currentLine.contains("Total Component Query time:")) {
+//				String[] s = currentLine.split(" ");
+//				System.out.print(s[4]);
+//			}
+//			else if (currentLine.contains("Total Path Building time:")) {
+//				String[] s = currentLine.split(" ");
+//				System.out.print("\t" + Long.parseLong(s[4]));				
+//			}
+//			else if (currentLine.contains("Total running time:")) {
+//				String[] s = currentLine.split(" ");
+//				System.out.println("\t" + Long.parseLong(s[3]));				
+//			}
 		}		
 		sc.close();		
 	}
