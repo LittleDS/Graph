@@ -2,6 +2,7 @@ import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -25,9 +26,9 @@ public class QueryGenerator {
 	}
 	
 	public static void main(String[] args) throws IOException {
-        QueryGenerator test = new QueryGenerator("Amazon",10,2);
-		for (int i = 0; i < 50; i++) 
-			test.VSGADDI("query" + i);
+        QueryGenerator test = new QueryGenerator("Amazon",5,2);
+		for (int i = 0; i < 1; i++) 
+			test.generateStar("query" + i);
 	}
 	
 	/**
@@ -304,4 +305,110 @@ public class QueryGenerator {
 		}
 		return edgelist;		
 	}
+	
+	public void generateStar(String outputFileName) throws IOException {
+		//Pick up the first edge
+		Integer[] c = new Integer[g.children.keySet().size()];
+		g.children.keySet().toArray(c);
+		Random r = new Random();
+		
+		Integer startVertex = null;		
+		
+		//Choose the center vertex
+		while (true) {
+			int p = r.nextInt(c.length);
+		
+			startVertex = c[p];
+			
+			if ( g.children.get(startVertex).size() > 0 
+				 && g.parents.containsKey(startVertex) && g.parents.get(startVertex).size() > 0
+				 && g.children.get(startVertex).size() + g.parents.get(startVertex).size() > sizeofComponent) {
+				break;
+			}
+		}
+		
+		//Put all the children and parents into the pool
+		List<Edge> edgepool = new LinkedList<Edge>();
+		for (Integer i : g.children.get(startVertex)) {
+			Edge t = new Edge(startVertex, i);
+			if (!edgepool.contains(t))
+				edgepool.add(t);
+		}
+		
+		for (Integer i : g.parents.get(startVertex)) {
+			Edge t = new Edge(i, startVertex);
+			if (!edgepool.contains(t))
+				edgepool.add(t);
+		}
+		
+		//Choose sizeofComponent elements from the pool
+		Collections.shuffle(edgepool);
+		edgepool = edgepool.subList(0, sizeofComponent);
+
+		//Re-format
+		HashMap<Integer, List<Integer>> children = new HashMap<Integer, List<Integer>>();
+
+		HashSet<Integer> vertices = new HashSet<Integer>();
+		
+		for (Edge e : edgepool) {
+			if (!children.containsKey(e.source))
+				children.put(e.source, new LinkedList<Integer>());
+			children.get(e.source).add(e.target);
+			
+			if (!vertices.contains(e.source))
+				vertices.add(e.source);
+			if (!vertices.contains(e.target))
+				vertices.add(e.target);
+		}
+
+		HashMap<Integer, Integer> IDMap = new HashMap<Integer, Integer>();
+		
+		int st = 0;
+		for (Integer i : vertices) {
+			IDMap.put(i, st++);
+		}
+		
+		//Output
+		FileWriter fstream = new FileWriter(outputFileName + "GBE");
+		BufferedWriter out = new BufferedWriter(fstream);
+		for (Integer i : vertices) {
+			String k = String.valueOf(IDMap.get(i));
+			out.write(k);
+			String as = g.primaryAttribute.get(i);
+			out.write("," + as);
+			out.write("\r\n");
+			
+			String temp = "";
+			if (children.containsKey(i)) {
+				for (Integer j : children.get(i)) {
+					temp += IDMap.get(j) + ",";
+				}
+				//Remove the last comma
+				temp = temp.substring(0, temp.length() - 1);
+			}
+			else
+				temp = "-1";
+			
+			out.write(temp + "\r\n");
+		}
+		out.close();		
+
+		fstream = new FileWriter(outputFileName + "GADDI");
+		out = new BufferedWriter(fstream);
+		out.write(vertices.size() + "\r\n");
+		for (Integer i : vertices) {
+			String k = String.valueOf(IDMap.get(i));
+			out.write(k);
+			String as = g.primaryAttribute.get(i);
+			out.write(" " + as + "\r\n");
+		}
+		for (Integer i : vertices) {
+			if (children.containsKey(i)) {
+				for (Integer j : children.get(i)) {
+					out.write(IDMap.get(i) + " " + IDMap.get(j) + "\r\n");
+				}
+			}
+		}
+		out.close();				
+	}	
 }
